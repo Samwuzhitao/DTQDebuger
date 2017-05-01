@@ -138,7 +138,7 @@ class UartListen(QThread):
                     print "status = %d char = %s str = %s" % (down_load_image_flag, read_char, recv_str)
                 down_load_image_flag = next_flag
 
-class DtqDebuger(QDialog):
+class DtqDebuger(QWidget):
     def __init__(self, parent=None):
         global ser
 
@@ -276,12 +276,13 @@ class DtqDebuger(QDialog):
         self.setGeometry(600, 500, 555, 500)
         self.send_lineedit.setFocus()
 
+        self.open_com_button.clicked.connect(self.open_uart)
         self.send_lineedit.returnPressed.connect(self.uart_send_data)
         self.clear_revice_button.clicked.connect(self.uart_data_clear)
         self.show_time_chackbox.stateChanged.connect(self.uart_show_time_check)
         self.auto_send_chackbox.stateChanged.connect(self.uart_auto_send_check)
 
-        self.send_cmd_combo.currentIndexChanged.connect(self.update_uart_cmd)
+        self.send_cmd_combo.currentIndexChanged.connect(self.update_uart_protocol)
         self.protocol_combo.currentIndexChanged.connect(self.update_uart_protocol)
         self.display_combo.currentIndexChanged.connect(self.update_uart_hex_decode_show_style)
 
@@ -292,6 +293,8 @@ class DtqDebuger(QDialog):
         self.update_fm_button.clicked.connect(self.update_uart_protocol)
         self.update_fm_button.clicked.connect(self.uart_send_data)
 
+
+
         self.setWindowTitle(u"答题器调试工具")
 
         self.uart_listen_thread=UartListen()
@@ -301,6 +304,29 @@ class DtqDebuger(QDialog):
             self.uart_send_press_1_text) 
         self.timer = QTimer()
         self.timer.timeout.connect(self.uart_send_data)
+
+    def open_uart(self):
+        global ser
+        global decode_type_flag
+
+        serial_port = str(self.com_combo.currentText())
+        baud_rate   = str(self.baudrate_lineedit.text())
+
+        try:
+            ser = serial.Serial( self.ports_dict[serial_port], 
+                string.atoi(baud_rate, 10))
+        except serial.SerialException: 
+            pass
+            
+        if ser.isOpen() == True:
+            self.browser.append("<font color=red> Open <b>%s</b> \
+                OK!</font>" % ser.portstr )
+            self.browser.append(u"<b>S[%d]:</b> %s" %(input_count, data))
+            self.open_com_button.setText(u"关闭串口")
+        else:
+            self.browser.append("<font color=red> Open <b>%s</b> \
+                Error!</font>" % ser.portstr )
+            self.open_com_button.setText(u"打开串口")
 
     def uart_send_press_1_text(self,data):
         global ser
@@ -354,10 +380,6 @@ class DtqDebuger(QDialog):
             data = unicode(self.send_cmd_combo.currentText())
             self.send_lineedit.setText(self.hex_cmd_dict[data])
         #print decode_type_flag
-
-    def update_uart_cmd(self):
-        global decode_type_flag
-        self.send_cmd_combo.currentText()
 
     def uart_download_image(self):
         global down_load_image_flag
