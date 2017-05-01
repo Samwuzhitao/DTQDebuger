@@ -309,7 +309,7 @@ class DtqDebuger(QWidget):
 
 
 
-        self.setWindowTitle(u"答题器调试工具")
+        self.setWindowTitle(u"答题器调试工具v0.1.2")
 
         self.uart_listen_thread=UartListen()
         self.connect(self.uart_listen_thread,SIGNAL('output(QString)'),
