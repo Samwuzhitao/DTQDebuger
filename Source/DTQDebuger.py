@@ -221,6 +221,7 @@ class DtqDebuger(QWidget):
         self.com_combo.setFixedSize(75, 25)
         self.show_time_chackbox = QCheckBox(u"显示时间")
         self.com_combo.setFixedSize(75, 25) 
+        self.browser.setFont(QFont("Courier New", 8, QFont.Bold, False))
 
         self.send_time_label=QLabel(u"发送周期：") 
         self.send_time_label.setFixedSize(60, 20)
@@ -241,6 +242,18 @@ class DtqDebuger(QWidget):
         self.send_lineedit.selectAll()
         self.send_lineedit.setDragEnabled(True)
         self.send_lineedit.setMaxLength(5000)
+
+        str = QStringList(["{'fun':'clear_wl'}",
+                           "{'fun':'bind_start'}",
+                           "{'fun':'bind_stop'}",
+                           "{'fun':'get_device_info'}",
+                           "{'fun':'check_config'}",
+                           "{'fun':'set_student_id','student_id':'1234'}",
+                           "{'fun': 'set_channel','tx_ch': '2','rx_ch': '6'}",
+                           "{'fun':'set_tx_power','tx_power':'5'}",
+                           "{'fun':'bootloader'}"
+                           ])#预先设置字典  
+        self.send_lineedit.setCompleter(QCompleter(str)) #将字典添加到lineEdit中  
 
         c_hbox = QHBoxLayout()
         c_hbox.addWidget(self.com_combo)
@@ -275,6 +288,7 @@ class DtqDebuger(QWidget):
 
         self.setGeometry(600, 500, 555, 500)
         self.send_lineedit.setFocus()
+        self.send_lineedit.setFont(QFont("Courier New", 8, QFont.Bold, False))
 
         self.open_com_button.clicked.connect(self.open_uart)
         self.send_lineedit.returnPressed.connect(self.uart_send_data)
