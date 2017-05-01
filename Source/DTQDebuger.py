@@ -308,6 +308,7 @@ class DtqDebuger(QWidget):
     def open_uart(self):
         global ser
         global decode_type_flag
+        global input_count
 
         serial_port = str(self.com_combo.currentText())
         baud_rate   = str(self.baudrate_lineedit.text())
@@ -317,16 +318,19 @@ class DtqDebuger(QWidget):
                 string.atoi(baud_rate, 10))
         except serial.SerialException: 
             pass
-            
-        if ser.isOpen() == True:
-            self.browser.append("<font color=red> Open <b>%s</b> \
-                OK!</font>" % ser.portstr )
-            self.browser.append(u"<b>S[%d]:</b> %s" %(input_count, data))
-            self.open_com_button.setText(u"关闭串口")
+
+        if input_count == 0:
+            if ser.isOpen() == True:
+                self.browser.append("<font color=red> Open  <b>%s</b> \
+                    OK!</font>" % ser.portstr )
+                self.open_com_button.setText(u"关闭串口")
+                input_count = input_count + 1
         else:
-            self.browser.append("<font color=red> Open <b>%s</b> \
-                Error!</font>" % ser.portstr )
+            self.browser.append("<font color=red> Close <b>%s</b> \
+                OK!</font>" % ser.portstr )
             self.open_com_button.setText(u"打开串口")
+            input_count = 0
+            ser.close()
 
     def uart_send_press_1_text(self,data):
         global ser
@@ -441,6 +445,7 @@ class DtqDebuger(QWidget):
             if ser.isOpen() == True:
                 self.browser.append("<font color=red> Open <b>%s</b> \
                     OK!</font>" % ser.portstr )
+                self.open_com_button.setText(u"关闭串口")
                 self.uart_listen_thread.start()
 
                 data = str(self.send_lineedit.text())
@@ -459,6 +464,7 @@ class DtqDebuger(QWidget):
             else:
                 self.browser.append("<font color=red> Open <b>%s</b> \
                     Error!</font>" % ser.portstr )
+                self.open_com_button.setText(u"关闭串口")
         else:
             if ser.isOpen() == True:
                 data = str(self.send_lineedit.text())
@@ -477,6 +483,7 @@ class DtqDebuger(QWidget):
             else:
                 self.browser.append("<font color=red> Open <b>%s</b> \
                     Error!</font>" % ser.portstr )
+                self.open_com_button.setText(u"关闭串口")
 
 if __name__=='__main__':
     app = QApplication(sys.argv)
