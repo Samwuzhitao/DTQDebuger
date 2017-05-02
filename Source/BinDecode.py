@@ -5,6 +5,7 @@ Created on Sat Apr 22 10:59:35 2017
 
 @author: john
 """
+
 import string
 import os
 import sys
@@ -16,6 +17,12 @@ class BinDecode():
         self.pack_num   = 0
         self.pack_unnum = 0
         self.crc16      = 0
+        self.image_path = ''
+        self.file_size  = 0
+        self.send_index = 0
+        self.count      = 0
+        self.DATA_LEN   = 1024
+        self.over       = 0
 
     def update_crc16(self,crc_in,u8_data):
         crc_temp = crc_in
@@ -40,9 +47,12 @@ class BinDecode():
         crc = self.update_crc16(crc,0)
         return (crc & 0xFFFF)
 
-    def encode_header_package(self,file_name,file_size):
+    def soh_pac(self,file_name,file_size):
         NOP  = 0
+        data_path  = os.path.abspath("../") +'\\data\\'
         data = "%s %d" % (file_name,file_size)
+        self.image_path = data_path + file_name
+        self.file_size  = file_size
 
         self.package= []
         # 封装帧头
@@ -64,55 +74,51 @@ class BinDecode():
         self.package.append(self.crc16 & 0xFF)
         self.package.append((self.crc16 & 0xFF00)>>8)
 
-        self.pack_num = self.pack_num + 1
-        self.pack_cmd = self.pack_cmd + 1
-
         return self.package
 
-    def encode_data_package(self,data):
-        self.pack_num = self.pack_num + 1
+    def stx_pac(self):
+        # 封装帧头
+        NOP  = 0
+        data = ''
+        self.package= []
+        self.pack_cmd = 2
+        self.pack_num = self.count
+        self.pack_unnum = self.count ^ 0xFF
+        self.package.append(self.pack_cmd)
+        self.package.append(self.pack_num)
+        self.package.append(self.pack_unnum)
 
-        print self.pack_num
-
-
-    def send_package(self):
-        print "send"
-
-    def run(self):
-        data_path  = os.path.abspath("./") +'\\data\\'
-        image_path = data_path + 'DTQ_RP551CPU_ZKXL0200_V0102.bin'
-        size       = os.path.getsize(image_path)
-        #print size
-        f = open(image_path, "rb")
-
-        send_index = 0
-        count = 0
-        DATA_LEN = 1024
-
-        #发送文件名和长度
-        self.encode_header_package(image_path,size)
-
-
-        while( size > send_index ):
+        # 封装帧内容
+        # 读取数据
+        f = open(self.image_path, "rb")
+        if self.file_size > self.send_index :
             #print count
             #print "read_start = %d " % (send_index)
-            f.seek(send_index,0)
+            f.seek(self.send_index,0)
 
-            if (send_index + DATA_LEN) < size:
-                read_count = DATA_LEN
+            if (self.send_index + self.DATA_LEN) < self.file_size:
+                read_count = self.DATA_LEN
             else:
-                read_count = size-send_index
+                read_count = self.file_size-self.send_index
 
-            temp=f.read(read_count) 
-            send_index = send_index + read_count
-
-            u8_array  = [string.atoi(item.encode('hex'), 16) for item in temp]
-            #for i in u8_array:
-            #    print  ",0x%02x" % i,
-            #print ""
-            crc16 = self.cal_crc16(u8_array)
-            count = count + 1
+            data=f.read(read_count) 
+            #print type(data)
+            self.send_index = self.send_index + read_count
+            self.count = self.count + 1
             #print "read_count = %03d crc16 = %04x" % (count,crc16)
-
-
         f.close()
+
+        # 封装数据
+        if len(data) > 0:
+            for item in data:
+                 self.package.append(ord(item))
+        if len(data) < self.DATA_LEN:
+            for i in range(self.DATA_LEN-len(data)):
+                self.package.append(NOP)
+        #计算CRC16
+        self.crc16 = self.cal_crc16(self.package[3:])
+        
+        self.package.append(self.crc16 & 0xFF)
+        self.package.append((self.crc16 & 0xFF00)>>8)
+
+        return self.package

@@ -103,23 +103,40 @@ class UartListen(QThread):
 
     def uart_down_load_image_2(self,read_char):
         recv_str = ""
-        recv_str = u"发送镜像文件信息..."
-        data_path  = os.path.abspath("../") +'\\data\\'
-        image_path = 'DTQ_RP551CPU_ZKXL0200_V0102.bin'
-        size       = os.path.getsize(data_path+image_path)
-        
-        ack = '06'
-        ack = ack.decode("hex")
-        ser.write(ack)
-        ser.write(self.bin_decode.encode_header_package(image_path,size))
+        retuen_flag = 2
 
-        return 3,recv_str
+        if read_char == 'C':
+            recv_str = u"发送镜像文件信息..."
+            data_path  = os.path.abspath("../") +'\\data\\'
+            image_path = 'DTQ_RP551CPU_ZKXL0200_V0102.bin'
+            size       = os.path.getsize(data_path+image_path)
+
+            ack = '06'
+            ack = ack.decode("hex")
+            ser.write(ack)
+            ser.write(self.bin_decode.soh_pac(image_path,size))
+            retuen_flag = 3
+
+        return retuen_flag,recv_str
 
     def uart_down_load_image_3(self,read_char):
         recv_str = ""
-        if read_char == 'C':
-            recv_str = u"接收校验通过..."
-        return 0,recv_str
+        retuen_flag = 3
+
+        char = "%02X" % ord(read_char)
+        if char == '06':
+            recv_str = u"接收ACK..."
+
+        if char == '43':
+            recv_str = u"接收CRC..."
+            ser.write(self.bin_decode.stx_pac())
+
+        if char == '15':
+            recv_str = u"接收NACK..."
+
+        if self.bin_decode.over == 1:
+           retuen_flag = 0
+        return retuen_flag,recv_str
 
     def run(self): 
         global ser
@@ -129,7 +146,7 @@ class UartListen(QThread):
             if ser.isOpen() == True:
                 read_char = ser.read(1)
                 if down_load_image_flag >= 2:
-                	print "status = %d char = %s " % (down_load_image_flag, read_char)
+                    print "status = %d char = %02X " % (down_load_image_flag, ord(read_char))
                 next_flag,recv_str = self.ReviceFunSets[down_load_image_flag]( read_char )
 
                 if len(recv_str) > 0:
