@@ -80,6 +80,7 @@ class UartListen(QThread):
         if decode_type_flag == 1:
             str1 = self.hex_revice.r_machine(read_char)
         if len(str1) != 0:
+            sleep(2)
             now = time.strftime( ISOTIMEFORMAT,
                 time.localtime(time.time()))
             if show_time_flag == 1:
@@ -96,7 +97,6 @@ class UartListen(QThread):
             if start_flag_count == 3:
                 recv_str = u"建立连接..."
                 retuen_flag = 2
-                self.emit(SIGNAL('pressed_1_cmd(QString)'),u"启动连接..." )
                 start_flag_count = 0
 
         return retuen_flag,recv_str
@@ -105,9 +105,12 @@ class UartListen(QThread):
         recv_str = ""
         recv_str = u"发送镜像文件信息..."
         data_path  = os.path.abspath("../") +'\\data\\'
-        image_path = data_path + 'DTQ_RP551CPU_ZKXL0200_V0102.bin'
-        size       = os.path.getsize(image_path)
+        image_path = 'DTQ_RP551CPU_ZKXL0200_V0102.bin'
+        size       = os.path.getsize(data_path+image_path)
         
+        ack = '06'
+        ack = ack.decode("hex")
+        ser.write(ack)
         ser.write(self.bin_decode.encode_header_package(image_path,size))
 
         return 3,recv_str
@@ -116,7 +119,7 @@ class UartListen(QThread):
         recv_str = ""
         if read_char == 'C':
             recv_str = u"接收校验通过..."
-        return 3,recv_str
+        return 0,recv_str
 
     def run(self): 
         global ser
@@ -125,17 +128,18 @@ class UartListen(QThread):
         while self.working==True: 
             if ser.isOpen() == True:
                 read_char = ser.read(1)
-                
+                if down_load_image_flag >= 2:
+                	print "status = %d char = %s " % (down_load_image_flag, read_char)
                 next_flag,recv_str = self.ReviceFunSets[down_load_image_flag]( read_char )
 
                 if len(recv_str) > 0:
                     if down_load_image_flag != 1:
                         self.emit(SIGNAL('output(QString)'),recv_str)
-                        print 'output(QString)',
+                        #print 'output(QString)',
                     else:
                         self.emit(SIGNAL('pressed_1_cmd(QString)'),recv_str )
-                        print 'pressed_1_cmd(QString)',
-                    print "status = %d char = %s str = %s" % (down_load_image_flag, read_char, recv_str)
+                        #print 'pressed_1_cmd(QString)',
+                    #print "status = %d char = %s str = %s" % (down_load_image_flag, read_char, recv_str)
                 down_load_image_flag = next_flag
 
 class DtqDebuger(QWidget):
@@ -160,6 +164,7 @@ class DtqDebuger(QWidget):
         self.json_cmd_dict[u'设置信道'] ="{'fun': 'set_channel','tx_ch': '2','rx_ch': '6'}"
         self.json_cmd_dict[u'设置功率'] ="{'fun':'set_tx_power','tx_power':'5'}"
         self.json_cmd_dict[u'下载程序'] ="{'fun':'bootloader'}"
+        self.json_cmd_dict[u'2.4g考勤'] ="{'fun':'24g_attendance','attendance_status': '1','attendance_tx_ch': '81'}"
 
         self.hex_cmd_dict   = {}
         self.hex_cmd_dict[u'清白名单'] = "5C 22 00 00 00 00 00 22 CA"
@@ -173,6 +178,7 @@ class DtqDebuger(QWidget):
         self.hex_cmd_dict[u'设置信道'] = u"暂无功能"
         self.hex_cmd_dict[u'设置功率'] = u"暂无功能"
         self.hex_cmd_dict[u'下载程序'] = u"暂无功能"
+        self.hex_cmd_dict[u'2.4g考勤'] = u"暂无功能"
 
         self.open_com_button=QPushButton(u"打开串口")
         self.open_com_button.setFixedSize(75, 25)
@@ -221,7 +227,7 @@ class DtqDebuger(QWidget):
         self.com_combo.setFixedSize(75, 25)
         self.show_time_chackbox = QCheckBox(u"显示时间")
         self.com_combo.setFixedSize(75, 25) 
-        self.browser.setFont(QFont("Courier New", 8, QFont.Bold, False))
+        self.browser.setFont(QFont("Courier New", 8, False))
 
         self.send_time_label=QLabel(u"发送周期：") 
         self.send_time_label.setFixedSize(60, 20)
@@ -249,9 +255,10 @@ class DtqDebuger(QWidget):
                            "{'fun':'get_device_info'}",
                            "{'fun':'check_config'}",
                            "{'fun':'set_student_id','student_id':'1234'}",
-                           "{'fun': 'set_channel','tx_ch': '2','rx_ch': '6'}",
+                           "{'fun':'set_channel','tx_ch':'2','rx_ch':'6'}",
                            "{'fun':'set_tx_power','tx_power':'5'}",
                            "{'fun':'bootloader'}"
+                           "{'fun':'24g_attendance','attendance_status':'1','attendance_tx_ch':'81'}"
                            ])#预先设置字典  
         self.send_lineedit.setCompleter(QCompleter(str)) #将字典添加到lineEdit中  
 
@@ -286,9 +293,9 @@ class DtqDebuger(QWidget):
         vbox.addLayout(d_hbox)
         self.setLayout(vbox)
 
-        self.setGeometry(600, 500, 555, 500)
+        self.setGeometry(500, 80, 555, 730)
         self.send_lineedit.setFocus()
-        self.send_lineedit.setFont(QFont("Courier New", 8, QFont.Bold, False))
+        self.send_lineedit.setFont(QFont("Courier New", 8, False))
 
         self.open_com_button.clicked.connect(self.open_uart)
         self.send_lineedit.returnPressed.connect(self.uart_send_data)
@@ -306,8 +313,6 @@ class DtqDebuger(QWidget):
         self.update_fm_button.clicked.connect(self.uart_download_image)
         self.update_fm_button.clicked.connect(self.update_uart_protocol)
         self.update_fm_button.clicked.connect(self.uart_send_data)
-
-
 
         self.setWindowTitle(u"答题器调试工具v0.1.2")
 
