@@ -155,17 +155,15 @@ class DtqDebuger(QWidget):
         self.json_cmd_dict[u'停止绑定'] = "{'fun':'bind_stop'}"
         self.json_cmd_dict[u'设备信息'] = "{'fun':'get_device_info'}"
         self.json_cmd_dict[u'发送题目'] = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',\
-            'questions': [{'type': 's','id': '1','range': 'A-D'},\
-            {'type': 'm','id': '13','range': 'A-F'},\
-            {'type': 'j','id': '24','range': ''},\
-            {'type': 'd','id': '27','range': '1-5'}]}"
+            'questions': [{'type': 's','id': '1','range': 'A-D'},{'type': 'm','id': '13','range': 'A-F'},\
+            {'type': 'j','id': '24','range': ''},{'type': 'd','id': '27','range': '1-5'}]}"
         self.json_cmd_dict[u'查看配置'] ="{'fun':'check_config'}"
         self.json_cmd_dict[u'设置学号'] ="{'fun':'set_student_id','student_id':'1234'}"
         self.json_cmd_dict[u'设置信道'] ="{'fun': 'set_channel','tx_ch': '2','rx_ch': '6'}"
         self.json_cmd_dict[u'设置功率'] ="{'fun':'set_tx_power','tx_power':'5'}"
         self.json_cmd_dict[u'下载程序'] ="{'fun':'bootloader'}"
         self.json_cmd_dict[u'2.4g考勤'] ="{'fun':'24g_attendance','attendance_status': '1','attendance_tx_ch': '81'}"
-        self.json_cmd_dict[u'DTQ 自检'] ="{'fun':'self_inspection'}"
+        self.json_cmd_dict[u'DTQ 自检'] ="{'fun':'dtq_self_inspection'}"
 
         self.hex_cmd_dict   = {}
         self.hex_cmd_dict[u'清白名单'] = "5C 22 00 00 00 00 00 22 CA"
@@ -259,8 +257,9 @@ class DtqDebuger(QWidget):
                            "{'fun':'set_student_id','student_id':'1234'}",
                            "{'fun':'set_channel','tx_ch':'2','rx_ch':'6'}",
                            "{'fun':'set_tx_power','tx_power':'5'}",
-                           "{'fun':'bootloader'}"
-                           "{'fun':'24g_attendance','attendance_status':'1','attendance_tx_ch':'81'}"
+                           "{'fun':'bootloader'}",
+                           "{'fun':'24g_attendance','attendance_status':'1','attendance_tx_ch':'81'}",
+                           "{'fun':'dtq_self_inspection'}"
                            ])#预先设置字典  
         self.send_lineedit.setCompleter(QCompleter(str)) #将字典添加到lineEdit中  
 
@@ -295,7 +294,7 @@ class DtqDebuger(QWidget):
         vbox.addLayout(d_hbox)
         self.setLayout(vbox)
 
-        self.setGeometry(500, 80, 555, 730)
+        self.setGeometry(1000, 80, 555, 730)
         self.send_lineedit.setFocus()
         self.send_lineedit.setFont(QFont("Courier New", 8, False))
 
@@ -345,6 +344,7 @@ class DtqDebuger(QWidget):
                 self.browser.append("<font color=red> Open  <b>%s</b> \
                     OK!</font>" % ser.portstr )
                 self.open_com_button.setText(u"关闭串口")
+                self.uart_listen_thread.start()
                 input_count = input_count + 1
         else:
             self.browser.append("<font color=red> Close <b>%s</b> \
