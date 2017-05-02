@@ -165,6 +165,7 @@ class DtqDebuger(QWidget):
         self.json_cmd_dict[u'设置功率'] ="{'fun':'set_tx_power','tx_power':'5'}"
         self.json_cmd_dict[u'下载程序'] ="{'fun':'bootloader'}"
         self.json_cmd_dict[u'2.4g考勤'] ="{'fun':'24g_attendance','attendance_status': '1','attendance_tx_ch': '81'}"
+        self.json_cmd_dict[u'DTQ 自检'] ="{'fun':'self_inspection'}"
 
         self.hex_cmd_dict   = {}
         self.hex_cmd_dict[u'清白名单'] = "5C 22 00 00 00 00 00 22 CA"
@@ -179,6 +180,7 @@ class DtqDebuger(QWidget):
         self.hex_cmd_dict[u'设置功率'] = u"暂无功能"
         self.hex_cmd_dict[u'下载程序'] = u"暂无功能"
         self.hex_cmd_dict[u'2.4g考勤'] = u"暂无功能"
+        self.hex_cmd_dict[u'DTQ 自检'] = u"暂无功能"
 
         self.open_com_button=QPushButton(u"打开串口")
         self.open_com_button.setFixedSize(75, 25)
