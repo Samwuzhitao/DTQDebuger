@@ -434,7 +434,7 @@ class DtqDebuger(QWidget):
         
         self.send_cmd_combo.setCurrentIndex(self.send_cmd_combo.
             findText(u'下载程序'))
-        image_path = QFileDialog.getOpenFileName(self, 'Open file', './')
+        image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './'))
         image_size  = os.path.getsize(image_path)
 
         down_load_image_flag = 1
