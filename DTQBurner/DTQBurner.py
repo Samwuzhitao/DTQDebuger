@@ -9,11 +9,8 @@ import string
 import time
 import os
 import sys
-from time import sleep
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
-import json
-
 from JsonDecode import *
 
 ser              = 0
@@ -171,10 +168,7 @@ class QtqBurner(QWidget):
             check_sum = 0
             for i in insert_data_hex:
                 check_sum = (ord(i) + check_sum) % 0x100
-                print "%02X" % ord(i),
-                print "check_sum = %02X" % check_sum
 
-            print "check_sum = %02X" % (0x100-check_sum)
             insert_data = ':' + insert_data + "%02X\n" % (0x100-check_sum)
             li.insert(1, insert_data)
             #print li
@@ -203,17 +197,19 @@ class QtqBurner(QWidget):
             data = u"<b>S[%d]: </b>" % (input_count-1) + u"%s" % cmd
             self.uart_update_text(data)
             self.start_button.setText(u"关闭接收器")
-        
+
     def choose_file(self):
-        self.filename = QFileDialog.getOpenFileName(self, 'Open file', './')
-        file = open(self.filename)
-        data = file.read()
-        self.browser.setText(data)
-        file.close()
+        self.filename = unicode(QFileDialog.getOpenFileName(self, 'Open file', './'))
+
+        if len(self.filename) > 0:
+            f = open(self.filename,"rb")
+            data = f.read()
+            self.browser.setText(data)
+            f.close()
  
 if __name__=='__main__':
     app = QApplication(sys.argv)
-    datdebuger = QtqBurner()
-    datdebuger.show()
+    datburner = QtqBurner()
+    datburner.show()
     app.exec_()
 
