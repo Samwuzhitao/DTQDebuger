@@ -17,14 +17,24 @@ from JsonDecode import *
 
 ser              = 0
 
-class DtqDebuger(QWidget):
+class QtqBurner(QWidget):
     def __init__(self, parent=None):
         global ser
 
-        super(DtqDebuger, self).__init__(parent)
+        super(QtqBurner, self).__init__(parent)
         input_count = 0
         self.ports_dict = {}
-        self.setWindowTitle(u"答题器调试工具v0.1.2")
+        self.setWindowTitle(u"答题器烧录工具v0.1.0")
+        self.file_button = QPushButton(u"打开文件")
+        self.textEdit = QTextEdit()
+       
+        vbox = QVBoxLayout()
+        vbox.addWidget(self.file_button)
+        vbox.addWidget(self.textEdit)
+        self.setLayout(vbox)
+
+        self.file_button.clicked.connect(self.choose_file)
+
 
     def uart_scan(self):
         for i in range(256):
@@ -37,10 +47,16 @@ class DtqDebuger(QWidget):
             except serial.SerialException:
                 pass
 
+    def choose_file(self):
+        filename = QFileDialog.getOpenFileName(self, 'Open file', './')
+        file = open(filename)
+        data = file.read()
+        self.textEdit.setText(data)
+        file.close()
  
 if __name__=='__main__':
     app = QApplication(sys.argv)
-    datdebuger = DtqDebuger()
+    datdebuger = QtqBurner()
     datdebuger.show()
     app.exec_()
 
