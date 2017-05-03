@@ -10,3 +10,4 @@
 > 1. 修改Source目录名称为DTQDebuger，增加烧录软件目录DTQBuner
 > 2. 修改DTQDebuger，增加选择下载文件功能
 > 3. 修改DTQBurner，修复无法打开中文路径的BUG
+> 4. 修改DTQBurner，增加接收器2个文件合并的功能
