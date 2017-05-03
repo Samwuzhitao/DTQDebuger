@@ -9,6 +9,8 @@ Created on Sat Apr 22 10:59:35 2017
 import string
 import os
 import sys
+from PyQt4.QtCore import *
+from PyQt4.QtGui  import *
 
 class BinDecode():
     def __init__(self): 
@@ -17,12 +19,15 @@ class BinDecode():
         self.pack_num   = 0
         self.pack_unnum = 0
         self.crc16      = 0
-        self.image_path = ''
+        self.filename   =''
         self.file_size  = 0
         self.send_index = 0
         self.count      = 0
         self.DATA_LEN   = 1024
         self.over       = 0
+        self.file_name   = ''
+        self.file_size  = 0
+
 
     def update_crc16(self,crc_in,u8_data):
         crc_temp = crc_in
@@ -47,12 +52,12 @@ class BinDecode():
         crc = self.update_crc16(crc,0)
         return (crc & 0xFFFF)
 
-    def soh_pac(self,file_name,file_size):
+    def soh_pac(self,image_path,image_size):
         NOP  = 0
-        data_path  = os.path.abspath("../") +'\\data\\'
-        data = "%s %d" % (file_name,file_size)
-        self.image_path = data_path + file_name
-        self.file_size  = file_size
+        #data_path  = os.path.abspath("../") +'\\data\\'
+        self.file_name   = image_path
+        self.file_size  = image_size
+        data = "%s %d" % (self.file_name,self.file_size)
 
         self.package= []
         # 封装帧头
@@ -90,7 +95,7 @@ class BinDecode():
 
         # 封装帧内容
         # 读取数据
-        f = open(self.image_path, "rb")
+        f = open(self.file_name, "rb")
         if self.file_size > self.send_index :
             #print count
             #print "read_start = %d " % (send_index)

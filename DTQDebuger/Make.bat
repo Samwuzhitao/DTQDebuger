@@ -1,4 +1,4 @@
-pyinstaller -F -w -i ../data./dtq.ico DTQDebuger.py
+pyinstaller -F -w -i ./dtq.ico DTQDebuger.py
 del DTQDebuger.spec
 del *.pyc
 rd /s /q build

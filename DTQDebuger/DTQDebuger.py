@@ -25,6 +25,8 @@ show_time_flag   = 0
 decode_type_flag = 0
 hex_decode_show_style = 1
 down_load_image_flag  = 0
+image_path            = ''
+image_size            = 0
 
 class UartListen(QThread): 
     def __init__(self,parent=None): 
@@ -102,19 +104,20 @@ class UartListen(QThread):
         return retuen_flag,recv_str
 
     def uart_down_load_image_2(self,read_char):
+    	global ser
+    	global image_path
+    	global image_size
+
         recv_str = ""
         retuen_flag = 2
 
         if read_char == 'C':
             recv_str = u"发送镜像文件信息..."
-            data_path  = os.path.abspath("../") +'\\data\\'
-            image_path = 'DTQ_RP551CPU_ZKXL0200_V0102.bin'
-            size       = os.path.getsize(data_path+image_path)
 
             ack = '06'
             ack = ack.decode("hex")
             ser.write(ack)
-            ser.write(self.bin_decode.soh_pac(image_path,size))
+            ser.write(self.bin_decode.soh_pac(image_path,image_size))
             retuen_flag = 3
 
         return retuen_flag,recv_str
@@ -164,9 +167,10 @@ class DtqDebuger(QWidget):
         global ser
 
         super(DtqDebuger, self).__init__(parent)
-        input_count = 0
-        self.ports_dict = {}
-        self.json_cmd_dict   = {}
+        input_count        = 0
+        self.ports_dict    = {}
+        self.json_cmd_dict = {}
+        self.filename      = ''
         self.json_cmd_dict[u'清白名单'] = "{'fun':'clear_wl'}"
         self.json_cmd_dict[u'开启绑定'] = "{'fun':'bind_start'}"
         self.json_cmd_dict[u'停止绑定'] = "{'fun':'bind_stop'}"
@@ -425,9 +429,14 @@ class DtqDebuger(QWidget):
 
     def uart_download_image(self):
         global down_load_image_flag
-
+        global image_path
+    	global image_size
+        
         self.send_cmd_combo.setCurrentIndex(self.send_cmd_combo.
             findText(u'下载程序'))
+        image_path = QFileDialog.getOpenFileName(self, 'Open file', './')
+        image_size  = os.path.getsize(image_path)
+
         down_load_image_flag = 1
 
     def uart_show_time_check(self):
