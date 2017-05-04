@@ -79,10 +79,16 @@ class QtqBurner(QWidget):
         c_hbox.addWidget(self.save_button)
 
         self.dtq_id_label=QLabel(u"设备ID:") 
-        self.dtq_id_lineedit = QLineEdit(u"1122334455667788")
+        self.dtq_id_lineedit = QLineEdit(u"11223344")
+        self.time_label=QLabel(u"系统时间:") 
+        self.time_lineedit = QLineEdit( time.strftime( 
+            '%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+
         e_hbox = QHBoxLayout()
         e_hbox.addWidget(self.dtq_id_label)
         e_hbox.addWidget(self.dtq_id_lineedit)
+        e_hbox.addWidget(self.time_label)
+        e_hbox.addWidget(self.time_lineedit)
 
         self.boot_button= QPushButton(u"BOOLLOADER")
         self.image_button = QPushButton(u"接收器固件")
@@ -126,6 +132,15 @@ class QtqBurner(QWidget):
             self.uart_update_text) 
         self.com_combo.currentIndexChanged.connect(self.change_uart)
 
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_time)
+        self.timer.start(1000)
+
+    def update_time(self):
+        self.time_lineedit.setText(time.strftime( 
+            '%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+        #self.exchange_file()
+
     def change_uart(self):
         global input_count
         global ser
@@ -139,7 +154,11 @@ class QtqBurner(QWidget):
     def uart_update_text(self,data):
         self.browser.append(data)
         if len(data) == 56:
-            self.dtq_id_lineedit.setText(data[44:54])
+            #id_data = "%08X" % string.atoi(data[44:54])
+            id_data = "%08X" % string.atoi(str(data[44:54]))
+            #string.atoi(str(self.dtq_id_lineedit.text()))
+            self.dtq_id_lineedit.setText(id_data)
+        self.exchange_file()
 
     def uart_scan(self):
         for i in range(256):
@@ -183,7 +202,9 @@ class QtqBurner(QWidget):
             f.close() 
             #print type(li)
             id_data = str(self.dtq_id_lineedit.text())
-            insert_data = "08FC0000" + id_data
+            #print id_data
+            time_data = time.strftime( '%Y%m%d%H%M%S',time.localtime(time.time()))
+            insert_data = "0BFC0000" + id_data + time_data 
             insert_data_hex = insert_data.decode("hex")
 
             check_sum = 0
