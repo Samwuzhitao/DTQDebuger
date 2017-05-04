@@ -25,7 +25,7 @@ class BinDecode():
         self.count      = 0
         self.DATA_LEN   = 1024
         self.over       = 0
-        self.file_name   = ''
+        self.file_name  = ''
         self.file_size  = 0
 
 
@@ -55,9 +55,10 @@ class BinDecode():
     def soh_pac(self,image_path,image_size):
         NOP  = 0
         #data_path  = os.path.abspath("../") +'\\data\\'
-        self.file_name   = image_path
-        self.file_size  = image_size
-        data = "%s %d" % (self.file_name,self.file_size)
+        if len(image_path) > 0:
+            self.file_name   = image_path
+            self.file_size  = image_size
+            data = "%s %d" % (self.file_name,self.file_size)
 
         self.package= []
         # 封装帧头
@@ -69,10 +70,36 @@ class BinDecode():
         self.package.append(self.pack_unnum)
 
         # 封装帧内容
-        for item in data:
-            self.package.append(ord(item))
-            #print ord(item),
+        if len(data) > 0:
+            for item in data:
+                self.package.append(ord(item))
+                #print ord(item),
         for i in range(128-len(data)):
+            self.package.append(NOP)
+            #print ord(item),
+        #计算CRC16
+        self.crc16 = self.cal_crc16(self.package[3:])
+
+        self.package.append((self.crc16 & 0xFF00)>>8)
+        self.package.append(self.crc16 & 0xFF)
+        self.count = 1
+
+        return self.package
+
+    def soh_pac_empty(self):
+        NOP  = 0
+
+        self.package= []
+        # 封装帧头
+        self.pack_cmd = 1
+        self.pack_num = 0
+        self.pack_unnum = 0xFF
+        self.package.append(self.pack_cmd)
+        self.package.append(self.pack_num)
+        self.package.append(self.pack_unnum)
+
+        # 封装帧内容
+        for i in range(128):
             self.package.append(NOP)
             #print ord(item),
         #计算CRC16
@@ -114,6 +141,11 @@ class BinDecode():
             self.count = self.count + 1
             #print "read_count = %03d crc16 = %04x" % (count,crc16)
         f.close()
+
+        #print "count = %dread_index = %d , sum = %d " % \
+        #       ( self.count, self.send_index,self.file_size),;
+        if self.send_index >= self.file_size:
+            self.over = 1
 
         # 封装数据
         if len(data) > 0:

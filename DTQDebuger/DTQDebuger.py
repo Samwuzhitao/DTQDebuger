@@ -113,18 +113,44 @@ class UartListen(QThread):
         retuen_flag = 3
 
         char = "%02X" % ord(read_char)
+        if self.bin_decode.over == 3:
+            self.info_str += read_char
+            #print self.info_str 
+            if char == '0A':
+                #print self.info_str 
+                recv_str = self.info_str
+                self.info_str = ''
+                if recv_str[0:5] == 'Start':
+                    retuen_flag = 0
+                    self.bin_decode.over = 0
+
+        #print "%s self.bin_decode.over = %d" % (char,self.bin_decode.over)
         if char == '06':
             recv_str = u"reviceed ACK..."
-            ser.write(self.bin_decode.stx_pac())
+            #print recv_str
+            if self.bin_decode.over == 0:
+                ser.write(self.bin_decode.stx_pac())
+
+            if self.bin_decode.over == 1:
+                eot = '04'
+                #print eot
+                eot = eot.decode("hex")
+                ser.write(eot)
+                self.bin_decode.over = 2
 
         if char == '43':
             recv_str = u"reviceed CRC..."
-
+            if self.bin_decode.over >= 2:    
+                ser.write(self.bin_decode.soh_pac_empty())
+                self.bin_decode.over = 3
+               
         if char == '15':
             recv_str = u"reviceed NACK..."
 
-        if self.bin_decode.over == 1:
-           retuen_flag = 0
+        if char == '18':
+            recv_str = u"reviceed CA..."
+
+
         return retuen_flag,recv_str
 
     def run(self): 

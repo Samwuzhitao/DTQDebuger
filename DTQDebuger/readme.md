@@ -65,3 +65,4 @@ description :
 * **描述** :
 > 1. 修改DTQDebuger，优化下载镜像的逻辑，能输出提示信息
 > 2. 修改DTQDebuger，修复bin文件解析封装包的CRC16包封装错误
+> 3. 修改DTQDebuger，完成下载程序的功能
