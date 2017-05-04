@@ -51,6 +51,7 @@ class UartListen(QThread):
         global decode_type_flag
         global show_time_flag
         global down_load_image_flag
+        global hex_decode_show_style
 
         recv_str      = ""
         ISOTIMEFORMAT = '%Y-%m-%d %H:%M:%S'
@@ -58,6 +59,7 @@ class UartListen(QThread):
         if decode_type_flag == 0:
             str1 = self.json_revice.r_machine(read_char)
         if decode_type_flag == 1:
+            self.hex_revice.show_style = hex_decode_show_style
             str1 = self.hex_revice.r_machine(read_char)
         if len(str1) != 0:
             now = time.strftime( ISOTIMEFORMAT,

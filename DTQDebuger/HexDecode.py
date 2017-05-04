@@ -13,6 +13,7 @@ class HexDecode():
         self.cnt         = 0
         self.xor         = 0
         self.str         = ""
+        self.show_style  = 1
         self.ReviceFunSets           = {
             "10":self.message_show_cmd_10,"11":self.message_show_cmd_11,
             "12":self.message_show_cmd_12,"13":self.message_show_cmd_10,
@@ -33,7 +34,7 @@ class HexDecode():
         }
 
     def r_machine(self,x):
-        global hex_decode_show_style
+        #global hex_decode_show_style
         char = "%02X" % ord(x)
         #print char
         #print "status = %d" % self.status
@@ -101,10 +102,10 @@ class HexDecode():
                 self.xor = 0
                 # uart xor data ok
                 #print self.str
-                if hex_decode_show_style == 0:
+                if self.show_style == 0:
                     self.str = " " + self.str
                     return self.str
-                if hex_decode_show_style == 1:
+                if self.show_style == 1:
                     self.str = self.message_show(self.str)
                     #cmd_type = str[4:6]
                     #self.ReviceFunSets[cmd_type](len_int,data,self.show)

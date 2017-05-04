@@ -58,3 +58,4 @@ description :
 > 1. 修改Source目录名称为DTQDebuger，增加烧录软件目录DTQBuner
 > 2. 修改DTQDebuger，增加选择下载文件功能
 > 3. 修改DTQDebuger，修复不能识别中文路径的BUG
+> 4. 修改DTQDebuger，修复HEX格式解析显示HEX失效BUG
