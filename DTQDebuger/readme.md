@@ -60,3 +60,8 @@ description :
 > 3. 修改DTQDebuger，修复不能识别中文路径的BUG
 > 4. 修改DTQDebuger，修复HEX格式解析显示HEX失效BUG
 > 5. 修改DTQDebuger，增加天喻协议的考勤与2.4G考勤与下载指令
+
+* **时间**：2017-05-04
+* **描述** :
+> 1. 修改DTQDebuger，优化下载镜像的逻辑，能输出提示信息
+> 2. 修改DTQDebuger，修复bin文件解析封装包的CRC16包封装错误

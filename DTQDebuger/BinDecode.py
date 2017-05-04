@@ -70,14 +70,16 @@ class BinDecode():
 
         # 封装帧内容
         for item in data:
-             self.package.append(ord(item))
+            self.package.append(ord(item))
+            #print ord(item),
         for i in range(128-len(data)):
             self.package.append(NOP)
+            #print ord(item),
         #计算CRC16
         self.crc16 = self.cal_crc16(self.package[3:])
-        
-        self.package.append(self.crc16 & 0xFF)
+
         self.package.append((self.crc16 & 0xFF00)>>8)
+        self.package.append(self.crc16 & 0xFF)
 
         return self.package
 
@@ -123,7 +125,7 @@ class BinDecode():
         #计算CRC16
         self.crc16 = self.cal_crc16(self.package[3:])
         
-        self.package.append(self.crc16 & 0xFF)
         self.package.append((self.crc16 & 0xFF00)>>8)
+        self.package.append(self.crc16 & 0xFF)
 
         return self.package

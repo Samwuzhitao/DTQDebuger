@@ -31,8 +31,9 @@ image_size            = 0
 class UartListen(QThread): 
     def __init__(self,parent=None): 
         super(UartListen,self).__init__(parent) 
-        self.working=True 
-        self.num=0 
+        self.working  = True 
+        self.num      = 0 
+        self.info_str = ''
         self.hex_revice  = HexDecode()
         self.json_revice = JsonDecode()
         self.bin_decode = BinDecode()
@@ -73,35 +74,18 @@ class UartListen(QThread):
     def uart_down_load_image_1(self,read_char):
         global decode_type_flag
         global show_time_flag
-
-        start_flag_count = 0
-        recv_str = ""
-        ISOTIMEFORMAT = '%Y-%m-%d %H:%M:%S'
+        recv_str    = ""
         retuen_flag = 1
 
-        if decode_type_flag == 0:
-            str1 = self.json_revice.r_machine(read_char)
-        if decode_type_flag == 1:
-            str1 = self.hex_revice.r_machine(read_char)
-        if len(str1) != 0:
-            sleep(2)
-            now = time.strftime( ISOTIMEFORMAT,
-                time.localtime(time.time()))
-            if show_time_flag == 1:
-                recv_str = u"[%s] <b>R[%d]: </b>" % (now, input_count-1) + u"%s" %  str1
-            else:
-                recv_str = u"<b>R[%d]: </b>" % (input_count-1) + u"%s" % str1
-
-        if read_char == 'C':
+        char = "%02X" % ord(read_char)
+        self.info_str += read_char
+        if char == '0A':
+            recv_str = self.info_str
+            self.info_str = ''
+  
+        if char == '43':
             retuen_flag = 2
-            recv_str = u"建立连接..."
-
-        if read_char == '.':
-            start_flag_count = start_flag_count + 1
-            if start_flag_count == 3:
-                recv_str = u"建立连接..."
-                retuen_flag = 2
-                start_flag_count = 0
+            recv_str = "Connected successfully..."
 
         return retuen_flag,recv_str
 
@@ -114,7 +98,7 @@ class UartListen(QThread):
         retuen_flag = 2
 
         if read_char == 'C':
-            recv_str = u"发送镜像文件信息..."
+            recv_str = "Send image name and size..."
 
             ack = '06'
             ack = ack.decode("hex")
@@ -130,14 +114,14 @@ class UartListen(QThread):
 
         char = "%02X" % ord(read_char)
         if char == '06':
-            recv_str = u"接收ACK..."
-
-        if char == '43':
-            recv_str = u"接收CRC..."
+            recv_str = u"reviceed ACK..."
             ser.write(self.bin_decode.stx_pac())
 
+        if char == '43':
+            recv_str = u"reviceed CRC..."
+
         if char == '15':
-            recv_str = u"接收NACK..."
+            recv_str = u"reviceed NACK..."
 
         if self.bin_decode.over == 1:
            retuen_flag = 0
@@ -150,8 +134,8 @@ class UartListen(QThread):
         while self.working==True: 
             if ser.isOpen() == True:
                 read_char = ser.read(1)
-                if down_load_image_flag >= 2:
-                    print "status = %d char = %02X " % (down_load_image_flag, ord(read_char))
+
+                #print "status = %d char = %02X " % (down_load_image_flag, ord(read_char))
                 next_flag,recv_str = self.ReviceFunSets[down_load_image_flag]( read_char )
 
                 if len(recv_str) > 0:
@@ -160,7 +144,6 @@ class UartListen(QThread):
                         #print 'output(QString)',
                     else:
                         self.emit(SIGNAL('pressed_1_cmd(QString)'),recv_str )
-                        #print 'pressed_1_cmd(QString)',
                     #print "status = %d char = %s str = %s" % (down_load_image_flag, read_char, recv_str)
                 down_load_image_flag = next_flag
 
@@ -383,13 +366,23 @@ class DtqDebuger(QWidget):
         global ser
         global down_load_image_flag
 
-        if down_load_image_flag == 1:
-            self.browser.append(data)
-            self.send_lineedit.setText("1:Download Image...")
-            self.timer.stop()
-            self.timer.start(300)
+        #print data
+        #if down_load_image_flag == 1:
+        self.browser.append(data)
+
+        if(len(str(data))) > 10:
+            cmd = str(data)
+            #self.browser.append(cmd[7:8])
+            if cmd[7:8] == '2':
+                self.send_lineedit.setText("%02X" % ord('1'))
+                self.uart_send_data()
+                self.timer.stop()
+                self.timer.start(300)
+            if cmd[7:8] == ' ':
+                self.timer.stop()
 
         if down_load_image_flag == 2:
+            self.timer.stop()
             if data == u'JSON':
                 decode_type_flag = 0
                 data = unicode(self.send_cmd_combo.currentText())
