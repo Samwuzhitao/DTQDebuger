@@ -64,7 +64,7 @@ class QtqBurner(QWidget):
         self.jsq_boot_path  = ''
         self.jsq_image_path = ''
 
-        self.setWindowTitle(u"答题器烧录工具v0.1.0")
+        self.setWindowTitle(u"答题器HEX文件转换工具v0.1.0")
 
         self.com_combo=QComboBox(self) 
         self.com_combo.setFixedSize(75, 20)
@@ -90,25 +90,34 @@ class QtqBurner(QWidget):
         e_hbox.addWidget(self.time_label)
         e_hbox.addWidget(self.time_lineedit)
 
-        self.boot_button= QPushButton(u"BOOLLOADER")
-        self.image_button = QPushButton(u"接收器固件")
-        self.merge_button = QPushButton(u"合并2个文件")
+        self.merge_label = QLabel(u"接收器2个HEX文件合并")
+        self.merge_label.setFont(QFont("Courier New", 14, QFont.Bold))
+        self.merge_label.setAlignment(Qt.AlignCenter)
         r_hbox = QHBoxLayout()
-        r_hbox.addWidget(self.boot_button)
-        r_hbox.addWidget(self.image_button)
-        r_hbox.addWidget(self.merge_button)
+        r_hbox.addWidget(self.merge_label)
 
-        self.boot_browser = QTextBrowser()
-        self.image_browser = QTextBrowser()
+        self.boot_button= QPushButton(u"BOOLLOADER")
+        self.boot_browser = QLineEdit()
+        self.boot_label=QLabel(u"文件:") 
+        b_hbox = QHBoxLayout()
+        b_hbox.addWidget(self.boot_label)
+        b_hbox.addWidget(self.boot_browser)
+        b_hbox.addWidget(self.boot_button)
+
+        self.image_button = QPushButton(u"接收器固件")
+        self.image_browser = QLineEdit()
+        self.image_label=QLabel(u"文件:")
         i_hbox = QHBoxLayout()
-        i_hbox.addWidget(self.boot_browser)
+        i_hbox.addWidget(self.image_label)
         i_hbox.addWidget(self.image_browser)
+        i_hbox.addWidget(self.image_button)
 
         self.browser = QTextBrowser()
-        self.burn_button = QPushButton(u"烧录文件")
+        self.burn_button = QPushButton(u"合并文件")
         vbox = QVBoxLayout()
         vbox.addWidget(self.browser)
         vbox.addLayout(r_hbox)
+        vbox.addLayout(b_hbox)
         vbox.addLayout(i_hbox)
         vbox.addWidget(self.burn_button)
 
@@ -118,12 +127,12 @@ class QtqBurner(QWidget):
         
         box.addLayout(vbox)
         self.setLayout(box)
-        self.resize( 600, 500 )
+        self.resize( 400, 500 )
 
         self.dtq_choose_image_button.clicked.connect(self.choose_image_file)
         self.boot_button.clicked.connect(self.choose_image_file)
         self.image_button.clicked.connect(self.choose_image_file)
-        self.merge_button.clicked.connect(self.merge_file)
+        self.burn_button.clicked.connect(self.merge_file)
 
         self.start_button.clicked.connect(self.band_start)
         self.save_button.clicked.connect(self.exchange_file)
@@ -257,17 +266,12 @@ class QtqBurner(QWidget):
         if button_str == u"BOOLLOADER":
             self.jsq_boot_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './'))
             if len(self.jsq_boot_path) > 0:
-                f = open(self.jsq_boot_path,"rb")
-                data = f.read()
-                self.boot_browser.setText(data)
-                f.close()
+                self.boot_browser.setText(self.jsq_boot_path)
+
         if button_str == u"接收器固件":
             self.jsq_image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './'))
             if len(self.jsq_image_path) > 0:
-                f = open(self.jsq_image_path,"rb")
-                data = f.read()
-                self.image_browser.setText(data)
-                f.close()
+                self.image_browser.setText(self.jsq_image_path)
 
     def merge_file(self):
         #print "****"
