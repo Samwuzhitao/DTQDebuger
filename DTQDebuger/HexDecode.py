@@ -245,10 +245,16 @@ class HexDecode():
         show_str  += " HW  = "+hwstr
         #show_f(show_str,'a')
         comstr = str[66:]
-        comstr = comstr.replace(' ','')
-        comstr = comstr.decode("hex")
+        #comstr = comstr.replace(' ','')
+        #comstr = comstr.decode("hex")
         show_str  += " COM = "+"ZKXLTEACH"
-        #print show_str
+
+        attend_status_str = comstr[24:26]
+        status = string.atoi(attend_status_str, 16)
+        attend_tx_ch_str  = comstr[27:29]
+        tx_ch = string.atoi(attend_tx_ch_str, 16)
+        show_str += " ATTENDENCE_STATUS = %02X ATTENDENCE_CH = %02X" % (status,tx_ch)
+
         return show_str
 
     def message_show_cmd_2d(self,len,str):

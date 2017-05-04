@@ -187,21 +187,24 @@ class DtqDebuger(QWidget):
         self.json_cmd_dict[u'下载程序'] ="{'fun':'bootloader'}"
         self.json_cmd_dict[u'2.4g考勤'] ="{'fun':'24g_attendance','attendance_status': '1','attendance_tx_ch': '81'}"
         self.json_cmd_dict[u'DTQ 自检'] ="{'fun':'dtq_self_inspection'}"
+        self.json_cmd_dict[u'开启考勤'] =u"暂无功能"
+        self.json_cmd_dict[u'停止考勤'] =u"暂无功能"
 
         self.hex_cmd_dict   = {}
         self.hex_cmd_dict[u'清白名单'] = "5C 22 00 00 00 00 00 22 CA"
         self.hex_cmd_dict[u'开启绑定'] = "5C 41 00 00 00 00 01 01 41 CA"
         self.hex_cmd_dict[u'停止绑定'] = "5C 41 FF FF FF FF 01 00 40 CA"
         self.hex_cmd_dict[u'设备信息'] = "5C 2C 00 00 00 00 00 2C CA"
-        self.hex_cmd_dict[u'单选题目'] = "5C 10 01 0C 14 55 0D 5A 00 00 00 00 00 11 03 01 01 7F 6D CA C1 CA"
-        self.hex_cmd_dict[u'发送题目'] = "5C 28 00 00 00 00 14 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 1C CA"
+        self.hex_cmd_dict[u'发送题目'] = "5C 10 01 0C 14 55 0D 5A 00 00 00 00 00 11 03 01 01 7F 6D CA C1 CA"
         self.hex_cmd_dict[u'查看配置'] = u"暂无功能"
-        self.hex_cmd_dict[u'设置学号'] = u"暂无功能"
+        self.hex_cmd_dict[u'设置学号'] = "5C 28 00 00 00 00 14 01 02 03 04 05 06 07 08 09 00 01 02 03 04 05 06 07 08 09 00 3C CA"
         self.hex_cmd_dict[u'设置信道'] = u"暂无功能"
         self.hex_cmd_dict[u'设置功率'] = u"暂无功能"
-        self.hex_cmd_dict[u'下载程序'] = u"暂无功能"
-        self.hex_cmd_dict[u'2.4g考勤'] = u"暂无功能"
+        self.hex_cmd_dict[u'下载程序'] = "5C 50 00 00 00 00 00 50 CA"
+        self.hex_cmd_dict[u'2.4g考勤'] = "5C 43 00 00 00 00 02 01 51 11 CA"
         self.hex_cmd_dict[u'DTQ 自检'] = u"暂无功能"
+        self.hex_cmd_dict[u'开启考勤'] = "5C 25 00 00 00 00 00 25 CA"
+        self.hex_cmd_dict[u'停止考勤'] = "5C 27 00 00 00 00 00 27 CA"
 
         self.open_com_button=QPushButton(u"打开串口")
         self.open_com_button.setFixedSize(75, 25)

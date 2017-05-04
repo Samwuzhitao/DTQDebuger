@@ -59,3 +59,4 @@ description :
 > 2. 修改DTQDebuger，增加选择下载文件功能
 > 3. 修改DTQDebuger，修复不能识别中文路径的BUG
 > 4. 修改DTQDebuger，修复HEX格式解析显示HEX失效BUG
+> 5. 修改DTQDebuger，增加天喻协议的考勤与2.4G考勤与下载指令
