@@ -126,13 +126,10 @@ class UartListen(QThread):
         #print "%s self.bin_decode.over = %d" % (char,self.bin_decode.over)
         if char == '06':
             revice_rate = self.bin_decode.send_index*100.0 / self.bin_decode.file_size
-            temp1 = int(revice_rate/2)
-            temp3 = temp1*'#' + (50-temp1)*' '
-            #print
-            recv_str = u"传输完成百分比：%s %3d%%" % (temp3,revice_rate)
-            #print recv_str
+            temp_str = int(revice_rate / 2.5)*'#' + (40-int(revice_rate / 2.5))*' '
 
-            #print recv_str
+            recv_str = u"传输完成进度：%s %3d%%" % (temp_str,revice_rate)
+   
             if self.bin_decode.over == 0:
                 ser.write(self.bin_decode.stx_pac())
 
@@ -428,6 +425,9 @@ class DtqDebuger(QWidget):
 
         #print data
         #if down_load_image_flag == 1:
+        cursor =  self.browser.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        self.browser.setTextCursor(cursor)
         self.browser.append(data)
 
         if len(data) > 20:
