@@ -126,7 +126,12 @@ class UartListen(QThread):
         #print "%s self.bin_decode.over = %d" % (char,self.bin_decode.over)
         if char == '06':
             revice_rate = self.bin_decode.send_index*100.0 / self.bin_decode.file_size
-            recv_str = u"传输完成百分比： %3d%%" % revice_rate
+            temp1 = int(revice_rate/2)
+            temp3 = temp1*'#' + (50-temp1)*' '
+            #print
+            recv_str = u"传输完成百分比：%s %3d%%" % (temp3,revice_rate)
+            #print recv_str
+
             #print recv_str
             if self.bin_decode.over == 0:
                 ser.write(self.bin_decode.stx_pac())
@@ -508,8 +513,17 @@ class DtqDebuger(QWidget):
     def uart_update_text(self,data):
         cursor =  self.browser.textCursor()
         cursor.movePosition(QTextCursor.End)
-        self.browser.setTextCursor(cursor)
-        self.browser.append(data)
+        if data[-1] == '%':
+            cursor.movePosition(QTextCursor.End,QTextCursor.KeepAnchor)
+            cursor.movePosition(QTextCursor.StartOfLine,QTextCursor.KeepAnchor)
+            cursor.selectedText()
+            cursor.removeSelectedText()
+            self.browser.setTextCursor(cursor)
+            self.browser.insertPlainText(data)
+        else:
+            self.browser.setTextCursor(cursor)
+            self.browser.append(data)
+
 
     def uart_data_clear(self):
         self.browser.clear()
