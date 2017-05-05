@@ -127,7 +127,8 @@ class UartListen(QThread):
 
         #print "%s self.bin_decode.over = %d" % (char,self.bin_decode.over)
         if char == '06':
-            recv_str = u"reviceed ACK..."
+            revice_rate = self.bin_decode.send_index*100.0 / self.bin_decode.file_size
+            recv_str = u"Send finishing rate %3d%%" % revice_rate
             #print recv_str
             if self.bin_decode.over == 0:
                 ser.write(self.bin_decode.stx_pac())
@@ -140,7 +141,7 @@ class UartListen(QThread):
                 self.bin_decode.over = 2
 
         if char == '43':
-            recv_str = u"reviceed CRC..."
+            #recv_str = u"reviceed CRC..."
             if self.bin_decode.over >= 2:    
                 ser.write(self.bin_decode.soh_pac_empty())
                 self.bin_decode.over = 3
@@ -258,7 +259,7 @@ class DtqDebuger(QWidget):
             self.send_cmd_combo.addItem(key)
         self.send_cmd_combo.setCurrentIndex(self.send_cmd_combo.
             findText(u'设备信息'))
-        self.browser = QTextBrowser()
+        self.browser = QTextBrowser ()
         self.auto_send_chackbox = QCheckBox(u"自动发送") 
         self.com_combo.setFixedSize(75, 25)
         self.show_time_chackbox = QCheckBox(u"显示时间")
@@ -456,14 +457,15 @@ class DtqDebuger(QWidget):
     def uart_download_image(self):
         global down_load_image_flag
         global image_path
-    	global image_size
+        global image_size
         
         self.send_cmd_combo.setCurrentIndex(self.send_cmd_combo.
             findText(u'下载程序'))
         image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './'))
-        image_size  = os.path.getsize(image_path)
 
-        down_load_image_flag = 1
+        if len(image_path) > 0:
+            image_size  = os.path.getsize(image_path)
+            down_load_image_flag = 1
 
     def uart_show_time_check(self):
         global show_time_flag
@@ -481,6 +483,9 @@ class DtqDebuger(QWidget):
             self.timer.stop()
 
     def uart_update_text(self,data):
+        cursor =  self.browser.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        self.browser.setTextCursor(cursor)
         self.browser.append(data)
 
     def uart_data_clear(self):

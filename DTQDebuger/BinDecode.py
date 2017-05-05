@@ -70,9 +70,9 @@ class BinDecode():
         NOP  = 0
         #data_path  = os.path.abspath("../") +'\\data\\'
         if len(image_path) > 0:
-            self.file_name   = image_path
+            self.file_name  = image_path
             self.file_size  = image_size
-            data = self.file_name
+            data = os.path.basename(self.file_name)
             data += '\0' 
             data += "%d" % self.file_size
 
