@@ -353,7 +353,7 @@ class DtqDebuger(QWidget):
         self.update_fm_button.clicked.connect(self.update_uart_protocol)
         self.update_fm_button.clicked.connect(self.uart_send_data)
 
-        self.setWindowTitle(u"答题器调试工具v0.1.2")
+        self.setWindowTitle(u"答题器调试工具v0.1.3")
 
         self.uart_listen_thread=UartListen()
         self.connect(self.uart_listen_thread,SIGNAL('output(QString)'),
