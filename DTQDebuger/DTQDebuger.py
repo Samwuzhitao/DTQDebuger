@@ -331,6 +331,7 @@ class DtqDebuger(QWidget):
         self.setLayout(vbox)
 
         self.resize( 555, 500 )
+        self.setFixedWidth( 555 )
         self.send_lineedit.setFocus()
         self.send_lineedit.setFont(QFont("Courier New", 8, False))
 
