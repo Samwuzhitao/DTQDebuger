@@ -72,3 +72,7 @@ description :
 > 1. 修改DTQDebuger，修复下载文件长度解析出错的BUG
 > 2. 修改DTQDebuger，固定水平宽度，垂直宽度可以调节，水平不能调节
 > 3. 修改DTQDebuger，剔除目录发送，支持添加中文路径的bin文件
+> 4. 修改DTQDebuger，修改提示信息为中文
+
+
+

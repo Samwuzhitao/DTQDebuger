@@ -85,7 +85,7 @@ class UartListen(QThread):
   
         if char == '43':
             retuen_flag = 2
-            recv_str = "Connected successfully..."
+            recv_str = u"建立连接成功..."
 
         return retuen_flag,recv_str
 
@@ -98,7 +98,7 @@ class UartListen(QThread):
         retuen_flag = 2
 
         if read_char == 'C':
-            recv_str = "Send image name and size..."
+            recv_str = u"开始传输文件..."
 
             ack = '06'
             ack = ack.decode("hex")
@@ -128,7 +128,7 @@ class UartListen(QThread):
         #print "%s self.bin_decode.over = %d" % (char,self.bin_decode.over)
         if char == '06':
             revice_rate = self.bin_decode.send_index*100.0 / self.bin_decode.file_size
-            recv_str = u"Send finishing rate %3d%%" % revice_rate
+            recv_str = u"传输完成百分比： %3d%%" % revice_rate
             #print recv_str
             if self.bin_decode.over == 0:
                 ser.write(self.bin_decode.stx_pac())
@@ -147,10 +147,10 @@ class UartListen(QThread):
                 self.bin_decode.over = 3
                
         if char == '15':
-            recv_str = u"reviceed NACK..."
+            recv_str = u"接收到 NACK..."
 
         if char == '18':
-            recv_str = u"reviceed CA..."
+            recv_str = u"接收到 CA..."
 
 
         return retuen_flag,recv_str
