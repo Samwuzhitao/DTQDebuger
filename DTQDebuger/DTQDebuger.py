@@ -26,7 +26,6 @@ decode_type_flag = 0
 hex_decode_show_style = 1
 down_load_image_flag  = 0
 image_path            = ''
-image_size            = 0
 
 class UartListen(QThread): 
     def __init__(self,parent=None): 
@@ -92,7 +91,6 @@ class UartListen(QThread):
     def uart_down_load_image_2(self,read_char):
     	global ser
     	global image_path
-    	global image_size
 
         recv_str = ""
         retuen_flag = 2
@@ -103,7 +101,7 @@ class UartListen(QThread):
             ack = '06'
             ack = ack.decode("hex")
             ser.write(ack)
-            ser.write(self.bin_decode.soh_pac(image_path,image_size))
+            ser.write(self.bin_decode.soh_pac(image_path))
             retuen_flag = 3
 
         return retuen_flag,recv_str
@@ -184,7 +182,6 @@ class DtqDebuger(QWidget):
         self.ports_dict    = {}
         self.json_cmd_dict = {}
         self.filename      = ''
-        self.jsq_image_path = ''
         self.json_cmd_dict[u'清白名单'] = "{'fun':'clear_wl'}"
         self.json_cmd_dict[u'开启绑定'] = "{'fun':'bind_start'}"
         self.json_cmd_dict[u'停止绑定'] = "{'fun':'bind_stop'}"
@@ -377,6 +374,8 @@ class DtqDebuger(QWidget):
         self.timer.timeout.connect(self.uart_send_data)
 
     def choose_image_file(self):
+        global image_path
+
         button = self.sender()
 
         if button is None or not isinstance(button, QPushButton):
@@ -385,9 +384,10 @@ class DtqDebuger(QWidget):
         button_str = button.text()
 
         if button_str == u"添加固件":
-            self.jsq_image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './'))
-            if len(self.jsq_image_path) > 0:
-                self.image_browser.setText(self.jsq_image_path)
+            temp_image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './'))
+            if len(temp_image_path) > 0:
+                self.image_browser.setText(temp_image_path)
+                image_path = temp_image_path
 
     def open_uart(self):
         global ser
@@ -483,13 +483,11 @@ class DtqDebuger(QWidget):
     def uart_download_image(self):
         global down_load_image_flag
         global image_path
-        global image_size
         
         self.send_cmd_combo.setCurrentIndex(self.send_cmd_combo.
             findText(u'下载程序'))
-        image_path = self.image_browser.text()
-        if len(self.jsq_image_path) > 0:
-            image_size  = os.path.getsize(self.jsq_image_path)
+        if len(image_path) > 0:
+            image_size  = os.path.getsize(image_path)
             down_load_image_flag = 1
 
     def uart_show_time_check(self):

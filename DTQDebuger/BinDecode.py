@@ -66,12 +66,12 @@ class BinDecode():
         crc = self.update_crc16(crc,0)
         return (crc & 0xFFFF)
 
-    def soh_pac(self,image_path,image_size):
+    def soh_pac(self,image_path):
         NOP  = 0
         #data_path  = os.path.abspath("../") +'\\data\\'
         if len(image_path) > 0:
-            self.file_name  = unicode(image_path.toUtf8(),'utf-8','ignore') 
-            self.file_size  = image_size
+            self.file_name  = image_path #unicode(image_path.toUtf8(),'utf-8','ignore') 
+            self.file_size  = os.path.getsize(self.file_name)
             data = self.file_name.split("/")[-1]
             data = str(data)
             #os.path.basename(self.file_name)
