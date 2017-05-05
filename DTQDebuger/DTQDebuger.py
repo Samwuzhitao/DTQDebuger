@@ -184,6 +184,7 @@ class DtqDebuger(QWidget):
         self.ports_dict    = {}
         self.json_cmd_dict = {}
         self.filename      = ''
+        self.jsq_image_path = ''
         self.json_cmd_dict[u'清白名单'] = "{'fun':'clear_wl'}"
         self.json_cmd_dict[u'开启绑定'] = "{'fun':'bind_start'}"
         self.json_cmd_dict[u'停止绑定'] = "{'fun':'bind_stop'}"
@@ -218,7 +219,7 @@ class DtqDebuger(QWidget):
         self.hex_cmd_dict[u'停止考勤'] = "5C 27 00 00 00 00 00 27 CA"
 
         self.open_com_button=QPushButton(u"打开串口")
-        self.open_com_button.setFixedSize(75, 25)
+        self.open_com_button.setFixedSize(75, 20)
         self.open_com_button.setStyleSheet(
             "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
             "QPushButton:hover{border-color:green;background:transparent}")  
@@ -248,22 +249,32 @@ class DtqDebuger(QWidget):
         self.clear_revice_button=QPushButton(u"清空数据")
         self.clear_revice_button.setCheckable(False)
         self.clear_revice_button.setAutoExclusive(False)
-        self.clear_revice_button.setFixedSize(75, 25)
+        self.clear_revice_button.setFixedSize(75, 20)
         self.clear_revice_button.setStyleSheet(
             "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
             "QPushButton:hover{border-color:green;background:transparent}")
 
         self.send_cmd_combo=QComboBox(self) 
-        self.send_cmd_combo.setFixedSize(75, 25)
         for key in self.json_cmd_dict:
             self.send_cmd_combo.addItem(key)
         self.send_cmd_combo.setCurrentIndex(self.send_cmd_combo.
             findText(u'设备信息'))
+        self.send_cmd_combo.setFixedSize(75, 40)
+        self.send_lineedit = QTextEdit(u"修改或者输入指令！")
+        self.send_lineedit.setFixedHeight(40)
+        self.send_lineedit_button=QPushButton(u"发送")
+        self.send_lineedit_button.setCheckable(False)
+        self.send_lineedit_button.setAutoExclusive(False)
+        self.send_lineedit_button.setFixedSize(75, 40)
+        self.send_lineedit_button.setStyleSheet(
+            "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
+            "QPushButton:hover{border-color:green;background:transparent}")
+
         self.browser = QTextBrowser ()
         self.auto_send_chackbox = QCheckBox(u"自动发送") 
-        self.com_combo.setFixedSize(75, 25)
+        self.com_combo.setFixedSize(75, 20)
         self.show_time_chackbox = QCheckBox(u"显示时间")
-        self.com_combo.setFixedSize(75, 25) 
+        self.com_combo.setFixedSize(75, 20) 
         self.browser.setFont(QFont("Courier New", 8, False))
 
         self.send_time_label=QLabel(u"发送周期：") 
@@ -276,29 +287,10 @@ class DtqDebuger(QWidget):
         self.update_fm_button=QPushButton(u"升级程序")
         self.update_fm_button.setCheckable(False)
         self.update_fm_button.setAutoExclusive(False)
-        self.update_fm_button.setFixedSize(75, 25)
+        self.update_fm_button.setFixedSize(75, 20)
         self.update_fm_button.setStyleSheet(
             "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
             "QPushButton:hover{border-color:green;background:transparent}")
-
-        self.send_lineedit = QLineEdit(u"修改或者输入指令，按Enter键发送！")
-        self.send_lineedit.selectAll()
-        self.send_lineedit.setDragEnabled(True)
-        self.send_lineedit.setMaxLength(5000)
-
-        str = QStringList(["{'fun':'clear_wl'}",
-                           "{'fun':'bind_start'}",
-                           "{'fun':'bind_stop'}",
-                           "{'fun':'get_device_info'}",
-                           "{'fun':'check_config'}",
-                           "{'fun':'set_student_id','student_id':'1234'}",
-                           "{'fun':'set_channel','tx_ch':'2','rx_ch':'6'}",
-                           "{'fun':'set_tx_power','tx_power':'5'}",
-                           "{'fun':'bootloader'}",
-                           "{'fun':'24g_attendance','attendance_status':'1','attendance_tx_ch':'81'}",
-                           "{'fun':'dtq_self_inspection'}"
-                           ])#预先设置字典  
-        self.send_lineedit.setCompleter(QCompleter(str)) #将字典添加到lineEdit中  
 
         c_hbox = QHBoxLayout()
         c_hbox.addWidget(self.com_combo)
@@ -323,12 +315,32 @@ class DtqDebuger(QWidget):
         d_hbox = QHBoxLayout()
         d_hbox.addWidget(self.send_cmd_combo)
         d_hbox.addWidget(self.send_lineedit)
+        d_hbox.addWidget(self.send_lineedit_button)
+        
+        self.image_button = QPushButton(u"添加固件")
+        self.image_button.setCheckable(False)
+        self.image_button.setAutoExclusive(False)
+        self.image_button.setFixedSize(75, 20)
+        self.image_button.setStyleSheet(
+            "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
+            "QPushButton:hover{border-color:green;background:transparent}")
+        self.image_browser = QLineEdit()
+        self.image_browser.setFixedHeight(20)
+        self.image_label=QLabel(u"文件路径：")
+        self.image_label.setFixedSize(75, 20)
+        i_hbox = QHBoxLayout()
+        i_hbox.addWidget(self.image_label)
+        i_hbox.addWidget(self.image_browser)
+        i_hbox.addWidget(self.image_button)
 
         vbox = QVBoxLayout()
         vbox.addLayout(c_hbox)
         vbox.addLayout(t_hbox)
+        vbox.addLayout(i_hbox)
         vbox.addWidget(self.browser)
         vbox.addLayout(d_hbox)
+        
+
         self.setLayout(vbox)
 
         self.resize( 555, 500 )
@@ -337,7 +349,7 @@ class DtqDebuger(QWidget):
         self.send_lineedit.setFont(QFont("Courier New", 8, False))
 
         self.open_com_button.clicked.connect(self.open_uart)
-        self.send_lineedit.returnPressed.connect(self.uart_send_data)
+        self.send_lineedit_button.clicked.connect(self.uart_send_data)
         self.clear_revice_button.clicked.connect(self.uart_data_clear)
         self.show_time_chackbox.stateChanged.connect(self.uart_show_time_check)
         self.auto_send_chackbox.stateChanged.connect(self.uart_auto_send_check)
@@ -352,6 +364,7 @@ class DtqDebuger(QWidget):
         self.update_fm_button.clicked.connect(self.uart_download_image)
         self.update_fm_button.clicked.connect(self.update_uart_protocol)
         self.update_fm_button.clicked.connect(self.uart_send_data)
+        self.image_button.clicked.connect(self.choose_image_file)
 
         self.setWindowTitle(u"答题器调试工具v0.1.3")
 
@@ -362,6 +375,19 @@ class DtqDebuger(QWidget):
             self.uart_send_press_1_text) 
         self.timer = QTimer()
         self.timer.timeout.connect(self.uart_send_data)
+
+    def choose_image_file(self):
+        button = self.sender()
+
+        if button is None or not isinstance(button, QPushButton):
+            return
+        #print "clicked button is %s " % button.text()
+        button_str = button.text()
+
+        if button_str == u"添加固件":
+            self.jsq_image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './'))
+            if len(self.jsq_image_path) > 0:
+                self.image_browser.setText(self.jsq_image_path)
 
     def open_uart(self):
         global ser
@@ -399,8 +425,8 @@ class DtqDebuger(QWidget):
         #if down_load_image_flag == 1:
         self.browser.append(data)
 
-        if(len(str(data))) > 10:
-            cmd = str(data)
+        if len(data) > 20:
+            cmd = data
             #self.browser.append(cmd[7:8])
             if cmd[7:8] == '2':
                 self.send_lineedit.setText("%02X" % ord('1'))
@@ -461,10 +487,9 @@ class DtqDebuger(QWidget):
         
         self.send_cmd_combo.setCurrentIndex(self.send_cmd_combo.
             findText(u'下载程序'))
-        image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './'))
-
-        if len(image_path) > 0:
-            image_size  = os.path.getsize(image_path)
+        image_path = str(self.image_browser.text())
+        if len(self.jsq_image_path) > 0:
+            image_size  = os.path.getsize(self.jsq_image_path)
             down_load_image_flag = 1
 
     def uart_show_time_check(self):
@@ -526,7 +551,7 @@ class DtqDebuger(QWidget):
                 self.open_com_button.setText(u"关闭串口")
                 self.uart_listen_thread.start()
 
-                data = str(self.send_lineedit.text())
+                data = str(self.send_lineedit.toPlainText())
                 if show_time_flag == 1:
                    self.browser.append(u"【%s】 <b>S[%d]:</b> %s"
                     % (now, input_count,data))
@@ -545,7 +570,7 @@ class DtqDebuger(QWidget):
                 self.open_com_button.setText(u"关闭串口")
         else:
             if ser.isOpen() == True:
-                data = str(self.send_lineedit.text())
+                data = str(self.send_lineedit.toPlainText())
                 if show_time_flag == 1:
                     self.browser.append(u"[%s] <b>S[%d]:</b> %s" 
                         % (now, input_count, data))
