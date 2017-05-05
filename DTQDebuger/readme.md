@@ -85,6 +85,7 @@ description :
 > 1. 修改DTQDebuger，确定版本为v0.1.3
 > 2. 使用QTextEdit代替QLineEdit显示发送指令，可以显示较长指令
 > 3. 修改添加下载文件的方式，方便重复下载
+> 4. 支持添加中文路径的bin文件
 
 
 

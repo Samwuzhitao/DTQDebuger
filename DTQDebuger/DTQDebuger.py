@@ -487,7 +487,7 @@ class DtqDebuger(QWidget):
         
         self.send_cmd_combo.setCurrentIndex(self.send_cmd_combo.
             findText(u'下载程序'))
-        image_path = str(self.image_browser.text())
+        image_path = self.image_browser.text()
         if len(self.jsq_image_path) > 0:
             image_size  = os.path.getsize(self.jsq_image_path)
             down_load_image_flag = 1
