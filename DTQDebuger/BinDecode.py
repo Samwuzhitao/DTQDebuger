@@ -28,6 +28,20 @@ class BinDecode():
         self.file_name  = ''
         self.file_size  = 0
 
+    def clear(self): 
+        self.package    = []
+        self.pack_cmd   = 0
+        self.pack_num   = 0
+        self.pack_unnum = 0
+        self.crc16      = 0
+        self.filename   =''
+        self.file_size  = 0
+        self.send_index = 0
+        self.count      = 0
+        self.DATA_LEN   = 1024
+        self.over       = 0
+        self.file_name  = ''
+        self.file_size  = 0
 
     def update_crc16(self,crc_in,u8_data):
         crc_temp = crc_in
@@ -58,7 +72,9 @@ class BinDecode():
         if len(image_path) > 0:
             self.file_name   = image_path
             self.file_size  = image_size
-            data = "%s %d" % (self.file_name,self.file_size)
+            data = self.file_name
+            data += '\0' 
+            data += "%d" % self.file_size
 
         self.package= []
         # 封装帧头

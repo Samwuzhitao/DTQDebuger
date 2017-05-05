@@ -109,6 +109,7 @@ class UartListen(QThread):
         return retuen_flag,recv_str
 
     def uart_down_load_image_3(self,read_char):
+        global down_load_image_flag
         recv_str = ""
         retuen_flag = 3
 
@@ -122,7 +123,7 @@ class UartListen(QThread):
                 self.info_str = ''
                 if recv_str[0:5] == 'Start':
                     retuen_flag = 0
-                    self.bin_decode.over = 0
+                    self.bin_decode.clear() 
 
         #print "%s self.bin_decode.over = %d" % (char,self.bin_decode.over)
         if char == '06':
@@ -329,7 +330,7 @@ class DtqDebuger(QWidget):
         vbox.addLayout(d_hbox)
         self.setLayout(vbox)
 
-        self.resize( 555, 650 )
+        self.resize( 555, 500 )
         self.send_lineedit.setFocus()
         self.send_lineedit.setFont(QFont("Courier New", 8, False))
 
