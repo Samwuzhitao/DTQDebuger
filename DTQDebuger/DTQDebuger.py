@@ -9,6 +9,7 @@ import string
 import time
 import os
 import sys
+import logging
 from time import sleep
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -26,6 +27,13 @@ decode_type_flag = 0
 hex_decode_show_style = 1
 down_load_image_flag  = 0
 image_path            = ''
+
+logging.basicConfig ( # 配置日志输出的方式及格式
+    level = logging.DEBUG,
+    filename = 'log.txt',
+    filemode = 'w',
+    format = u'【%(asctime)s】 %(filename)s [line:%(lineno)d] %(levelname)s %(message)s',
+)
 
 class UartListen(QThread): 
     def __init__(self,parent=None): 
@@ -506,6 +514,7 @@ class DtqDebuger(QWidget):
             self.browser.setTextCursor(cursor)
             self.browser.append(data)
 
+        logging.debug(u"接收数据：%s",data)
 
     def uart_data_clear(self):
         self.browser.clear()
@@ -533,17 +542,26 @@ class DtqDebuger(QWidget):
         now = time.strftime( ISOTIMEFORMAT, time.localtime( time.time() ) )
 
         if input_count == 0:
-            try:
-                ser = serial.Serial( self.ports_dict[serial_port], 
-                    string.atoi(baud_rate, 10))
-            except serial.SerialException: 
-                pass
+            if serial_port[:-1] == 'COM':
+                try:
+                    logging.info(u"尝试打开串口%s" % self.ports_dict[serial_port])
+                    ser = serial.Serial( self.ports_dict[serial_port], 
+                        string.atoi(baud_rate, 10))
+                except serial.SerialException: 
+                    logging.error(u"打开失败！")
+                    pass
+            else:
+                logging.error(u'没有检测到设备，请接入设备！')
+                self.browser.append(u"<b>Error[%d]:</b> %s" %(input_count, u'没有检测到设备，请接入设备！'))
+                return
             
             if ser.isOpen() == True:
                 self.browser.append("<font color=red> Open <b>%s</b> \
                     OK!</font>" % ser.portstr )
                 self.open_com_button.setText(u"关闭串口")
+                logging.info(u"关闭串口")
                 self.uart_listen_thread.start()
+                logging.info(u"启动串口监听线程!")
 
                 data = str(self.send_lineedit.toPlainText())
                 if show_time_flag == 1:
@@ -558,6 +576,7 @@ class DtqDebuger(QWidget):
                     data = data.decode("hex")
                     #print data
                 ser.write(data)
+                logging.debug(u"发送数据：%s",data)
             else:
                 self.browser.append("<font color=red> Open <b>%s</b> \
                     Error!</font>" % ser.portstr )
@@ -577,6 +596,7 @@ class DtqDebuger(QWidget):
                     data = data.decode("hex")
                     #print data
                 ser.write(data)
+                logging.debug(u"发送数据[%d]：%s" % (input_count, data))
             else:
                 self.browser.append("<font color=red> Open <b>%s</b> \
                     Error!</font>" % ser.portstr )
