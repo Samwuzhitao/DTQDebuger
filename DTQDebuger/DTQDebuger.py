@@ -84,7 +84,7 @@ class UartListen(QThread):
   
         if char == '43':
             retuen_flag = 2
-            recv_str = u"建立连接成功..."
+            recv_str = u"STEP[1]:建立连接成功..."
 
         return retuen_flag,recv_str
 
@@ -96,7 +96,7 @@ class UartListen(QThread):
         retuen_flag = 2
 
         if read_char == 'C':
-            recv_str = u"开始传输文件..."
+            recv_str = u"STEP[2]:发送镜像信息..."
 
             ack = '06'
             ack = ack.decode("hex")
@@ -128,7 +128,7 @@ class UartListen(QThread):
             revice_rate = self.bin_decode.send_index*100.0 / self.bin_decode.file_size
             temp_str = int(revice_rate / 2.5)*'#' + (40-int(revice_rate / 2.5))*' '
 
-            recv_str = u"传输完成进度：%s %3d%%" % (temp_str,revice_rate)
+            recv_str = u"STEP[3]:传输镜像文件：%s %3d%%" % (temp_str,revice_rate)
    
             if self.bin_decode.over == 0:
                 ser.write(self.bin_decode.stx_pac())
@@ -168,10 +168,10 @@ class UartListen(QThread):
 
                 if len(recv_str) > 0:
                     if down_load_image_flag != 1:
-                        self.emit(SIGNAL('output(QString)'),recv_str)
-                        #print 'output(QString)',
+                        self.emit(SIGNAL('protocol_message(QString)'),recv_str)
+                        #print 'protocol_message(QString)',
                     else:
-                        self.emit(SIGNAL('pressed_1_cmd(QString)'),recv_str )
+                        self.emit(SIGNAL('download_image_info(QString)'),recv_str )
                     #print "status = %d char = %s str = %s" % (down_load_image_flag, read_char, recv_str)
                 down_load_image_flag = next_flag
 
@@ -184,6 +184,7 @@ class DtqDebuger(QWidget):
         self.ports_dict    = {}
         self.json_cmd_dict = {}
         self.filename      = ''
+        self.process_bar   = 0
         self.json_cmd_dict[u'清白名单'] = "{'fun':'clear_wl'}"
         self.json_cmd_dict[u'开启绑定'] = "{'fun':'bind_start'}"
         self.json_cmd_dict[u'停止绑定'] = "{'fun':'bind_stop'}"
@@ -339,7 +340,6 @@ class DtqDebuger(QWidget):
         vbox.addWidget(self.browser)
         vbox.addLayout(d_hbox)
         
-
         self.setLayout(vbox)
 
         self.resize( 555, 500 )
@@ -368,10 +368,10 @@ class DtqDebuger(QWidget):
         self.setWindowTitle(u"答题器调试工具v0.1.3")
 
         self.uart_listen_thread=UartListen()
-        self.connect(self.uart_listen_thread,SIGNAL('output(QString)'),
+        self.connect(self.uart_listen_thread,SIGNAL('protocol_message(QString)'),
             self.uart_update_text) 
-        self.connect(self.uart_listen_thread,SIGNAL('pressed_1_cmd(QString)'),
-            self.uart_send_press_1_text) 
+        self.connect(self.uart_listen_thread,SIGNAL('download_image_info(QString)'),
+            self.uart_update_download_image_info) 
         self.timer = QTimer()
         self.timer.timeout.connect(self.uart_send_data)
 
@@ -419,40 +419,15 @@ class DtqDebuger(QWidget):
             input_count = 0
             ser.close()
 
-    def uart_send_press_1_text(self,data):
+    def uart_update_download_image_info(self,data):
         global ser
         global down_load_image_flag
 
-        #print data
-        #if down_load_image_flag == 1:
-        cursor =  self.browser.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        self.browser.setTextCursor(cursor)
-        self.browser.append(data)
-
-        if len(data) > 20:
-            cmd = data
-            #self.browser.append(cmd[7:8])
-            if cmd[7:8] == '2':
-                self.send_lineedit.setText("%02X" % ord('1'))
-                self.uart_send_data()
-                self.timer.stop()
-                self.timer.start(300)
-            if cmd[7:8] == ' ':
-                self.timer.stop()
-
         if down_load_image_flag == 2:
-            self.timer.stop()
-            if data == u'JSON':
-                decode_type_flag = 0
-                data = unicode(self.send_cmd_combo.currentText())
-                self.send_lineedit.setText(self.json_cmd_dict[data])
-      
-            if data == u'HEX':
-                decode_type_flag = 1
-                data = unicode(self.send_cmd_combo.currentText())
-                self.send_lineedit.setText(self.hex_cmd_dict[data])
-            self.timer.stop()
+            self.uart_update_text(data)
+
+        if data[7:8] == '2':
+            ser.write('1')
 
     def change_uart(self):
         global input_count
@@ -494,6 +469,7 @@ class DtqDebuger(QWidget):
         if len(image_path) > 0:
             image_size  = os.path.getsize(image_path)
             down_load_image_flag = 1
+            self.process_bar = 0
 
     def uart_show_time_check(self):
         global show_time_flag
@@ -513,13 +489,19 @@ class DtqDebuger(QWidget):
     def uart_update_text(self,data):
         cursor =  self.browser.textCursor()
         cursor.movePosition(QTextCursor.End)
+        
         if data[-1] == '%':
-            cursor.movePosition(QTextCursor.End,QTextCursor.KeepAnchor)
-            cursor.movePosition(QTextCursor.StartOfLine,QTextCursor.KeepAnchor)
-            cursor.selectedText()
-            cursor.removeSelectedText()
-            self.browser.setTextCursor(cursor)
-            self.browser.insertPlainText(data)
+            if self.process_bar != 0:
+                cursor.movePosition(QTextCursor.End,QTextCursor.KeepAnchor)
+                cursor.movePosition(QTextCursor.StartOfLine,QTextCursor.KeepAnchor)
+                cursor.selectedText()
+                cursor.removeSelectedText()
+                self.browser.setTextCursor(cursor)
+                self.browser.insertPlainText(data)
+            else:
+                self.browser.setTextCursor(cursor)
+                self.browser.append(data)
+            self.process_bar = self.process_bar + 1
         else:
             self.browser.setTextCursor(cursor)
             self.browser.append(data)
