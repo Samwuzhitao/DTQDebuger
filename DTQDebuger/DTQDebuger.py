@@ -191,15 +191,18 @@ class DtqDebuger(QWidget):
         input_count        = 0
         self.ports_dict    = {}
         self.json_cmd_dict = {}
-        self.filename      = ''
         self.process_bar   = 0
+        self.cmd_file_name = ''
         self.json_cmd_dict[u'清白名单'] = "{'fun':'clear_wl'}"
         self.json_cmd_dict[u'开启绑定'] = "{'fun':'bind_start'}"
         self.json_cmd_dict[u'停止绑定'] = "{'fun':'bind_stop'}"
         self.json_cmd_dict[u'设备信息'] = "{'fun':'get_device_info'}"
         self.json_cmd_dict[u'发送题目'] = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',\
-            'questions': [{'type': 's','id': '1','range': 'A-D'},{'type': 'm','id': '13','range': 'A-F'},\
-            {'type': 'j','id': '24','range': ''},{'type': 'd','id': '27','range': '1-5'}]}"
+            'questions': [\
+            {'type': 's','id': '1','range': 'A-D'},\
+            {'type': 'm','id': '13','range': 'A-F'},\
+            {'type': 'j','id': '24','range': ''},\
+            {'type': 'd','id': '27','range': '1-5'}]}"
         self.json_cmd_dict[u'查看配置'] ="{'fun':'check_config'}"
         self.json_cmd_dict[u'设置学号'] ="{'fun':'set_student_id','student_id':'1234'}"
         self.json_cmd_dict[u'设置信道'] ="{'fun': 'set_channel','tx_ch': '2','rx_ch': '6'}"
@@ -268,6 +271,7 @@ class DtqDebuger(QWidget):
         self.send_cmd_combo.setCurrentIndex(self.send_cmd_combo.
             findText(u'设备信息'))
         self.send_cmd_combo.setFixedSize(75, 40)
+
         self.send_lineedit = QTextEdit(u"修改或者输入指令！")
         self.send_lineedit.setFixedHeight(40)
         self.send_lineedit_button=QPushButton(u"发送")
@@ -280,9 +284,9 @@ class DtqDebuger(QWidget):
 
         self.browser = QTextBrowser ()
         self.auto_send_chackbox = QCheckBox(u"自动发送") 
-        self.com_combo.setFixedSize(75, 20)
+        self.auto_send_chackbox.setFixedSize(75, 20)
         self.show_time_chackbox = QCheckBox(u"显示时间")
-        self.com_combo.setFixedSize(75, 20) 
+        self.show_time_chackbox.setFixedSize(75, 20) 
         self.browser.setFont(QFont("Courier New", 8, False))
 
         self.send_time_label=QLabel(u"发送周期：") 
@@ -334,24 +338,41 @@ class DtqDebuger(QWidget):
             "QPushButton:hover{border-color:green;background:transparent}")
         self.image_browser = QLineEdit()
         self.image_browser.setFixedHeight(20)
-        self.image_label=QLabel(u"文件路径：")
+        self.image_label=QLabel(u"程序固件：")
         self.image_label.setFixedSize(75, 20)
         i_hbox = QHBoxLayout()
         i_hbox.addWidget(self.image_label)
         i_hbox.addWidget(self.image_browser)
         i_hbox.addWidget(self.image_button)
 
+        self.script_button = QPushButton(u"添加脚本")
+        self.script_button.setCheckable(False)
+        self.script_button.setAutoExclusive(False)
+        self.script_button.setFixedSize(75, 20)
+        self.script_button.setStyleSheet(
+            "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
+            "QPushButton:hover{border-color:green;background:transparent}")
+        self.script_browser = QLineEdit()
+        self.script_browser.setFixedHeight(20)
+        self.script_label=QLabel(u"指令脚本：")
+        self.script_label.setFixedSize(75, 20)
+        s_hbox = QHBoxLayout()
+        s_hbox.addWidget(self.script_label)
+        s_hbox.addWidget(self.script_browser)
+        s_hbox.addWidget(self.script_button)
+
         vbox = QVBoxLayout()
         vbox.addLayout(c_hbox)
         vbox.addLayout(t_hbox)
         vbox.addLayout(i_hbox)
+        vbox.addLayout(s_hbox)
         vbox.addWidget(self.browser)
         vbox.addLayout(d_hbox)
         
         self.setLayout(vbox)
 
-        self.resize( 555, 500 )
-        self.setFixedWidth( 555 )
+        self.resize( 540, 500 )
+        self.setFixedWidth( 540 )
         self.send_lineedit.setFocus()
         self.send_lineedit.setFont(QFont("Courier New", 8, False))
 
@@ -372,6 +393,7 @@ class DtqDebuger(QWidget):
         self.update_fm_button.clicked.connect(self.update_uart_protocol)
         self.update_fm_button.clicked.connect(self.uart_send_data)
         self.image_button.clicked.connect(self.choose_image_file)
+        self.script_button.clicked.connect(self.choose_image_file)
 
         self.setWindowTitle(u"答题器调试工具v0.1.3")
 
@@ -398,6 +420,12 @@ class DtqDebuger(QWidget):
             if len(temp_image_path) > 0:
                 self.image_browser.setText(temp_image_path)
                 image_path = temp_image_path
+
+        if button_str == u"添加脚本":
+            temp_image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './'))
+            if len(temp_image_path) > 0:
+                self.script_browser.setText(temp_image_path)
+                self.cmd_file_name = temp_image_path
 
     def open_uart(self):
         global ser
