@@ -230,10 +230,7 @@ class DtqDebuger(QWidget):
         self.hex_cmd_dict[u'停止考勤'] = "5C 27 00 00 00 00 00 27 CA"
 
         self.open_com_button=QPushButton(u"打开串口")
-        self.open_com_button.setFixedSize(75, 20)
-        self.open_com_button.setStyleSheet(
-            "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
-            "QPushButton:hover{border-color:green;background:transparent}")  
+        self.open_com_button.setFixedSize(75, 20) 
         self.com_combo=QComboBox(self) 
         self.com_combo.setFixedSize(75, 20)
         self.uart_scan()
@@ -395,7 +392,7 @@ class DtqDebuger(QWidget):
         self.image_button.clicked.connect(self.choose_image_file)
         self.script_button.clicked.connect(self.choose_image_file)
 
-        self.setWindowTitle(u"答题器调试工具v0.1.3")
+        self.setWindowTitle(u"答题器调试工具v0.1.4")
 
         self.uart_listen_thread=UartListen()
         self.connect(self.uart_listen_thread,SIGNAL('protocol_message(QString)'),
