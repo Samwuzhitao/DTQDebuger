@@ -162,7 +162,8 @@ class QtqBurner(QWidget):
 
     def uart_update_text(self,data):
         self.browser.append(data)
-        if len(data) == 56:
+        print data[34:41]
+        if data[34:41] == "card_id":
             #id_data = "%08X" % string.atoi(data[44:54])
             id_data = "%08X" % string.atoi(str(data[44:54]))
             #string.atoi(str(self.dtq_id_lineedit.text()))
@@ -239,6 +240,7 @@ class QtqBurner(QWidget):
         global ser
         global input_count
 
+        self.open_uart()
         if ser.isOpen() == True:
             self.uart_listen_thread.start()
             cmd = "{'fun':'bind_start'}"
