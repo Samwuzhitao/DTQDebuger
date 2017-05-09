@@ -127,7 +127,7 @@ class QtqBurner(QWidget):
         
         box.addLayout(vbox)
         self.setLayout(box)
-        self.resize( 400, 500 )
+        self.resize( 540, 500 )
 
         self.dtq_choose_image_button.clicked.connect(self.choose_image_file)
         self.boot_button.clicked.connect(self.choose_image_file)
