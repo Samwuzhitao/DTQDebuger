@@ -198,11 +198,14 @@ class DtqDebuger(QWidget):
         self.json_cmd_dict[u'停止绑定'] = "{'fun':'bind_stop'}"
         self.json_cmd_dict[u'设备信息'] = "{'fun':'get_device_info'}"
         self.json_cmd_dict[u'发送题目'] = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',\
+            'raise_hand': '1',\
+            'attendance': '1',\
             'questions': [\
             {'type': 's','id': '1','range': 'A-D'},\
             {'type': 'm','id': '13','range': 'A-F'},\
             {'type': 'j','id': '24','range': ''},\
-            {'type': 'd','id': '27','range': '1-5'}]}"
+            {'type': 'd','id': '27','range': '1-5'},\
+            {'type': 'g','id': '36','range': ''}]}"
         self.json_cmd_dict[u'查看配置'] ="{'fun':'check_config'}"
         self.json_cmd_dict[u'设置学号'] ="{'fun':'set_student_id','student_id':'1234'}"
         self.json_cmd_dict[u'设置信道'] ="{'fun': 'set_channel','tx_ch': '2','rx_ch': '6'}"
