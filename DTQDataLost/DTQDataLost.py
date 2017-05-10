@@ -16,6 +16,11 @@ from JsonDecode import *
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as figureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
+from pylab import *  
+#指定默认字体  
+mpl.rcParams['font.sans-serif'] = ['SimHei'] 
+#解决保存图像是负号'-'显示为方块的问题
+mpl.rcParams['axes.unicode_minus'] = False   
 
 ser              = ''
 input_count      = 0
@@ -84,15 +89,14 @@ class QtqBurner(QWidget):
     def __init__(self, parent=None):
         super(QtqBurner, self).__init__(parent)
         self.ports_dict = {}
-        self.x = []
-        self.y = []
+        self.data_dict  = {}
         self.start_time = int(time.time())
         self.setWindowTitle(u"答题器丢包测试工具v0.1.0")
         self.com_combo=QComboBox(self) 
         self.com_combo.setFixedSize(75, 20)
         self.uart_scan()
         self.start_button= QPushButton(u"打开接收器")
-        self.dtq_id_label=QLabel(u"发送周期:") 
+        self.dtq_id_label=QLabel(u"设备ID:") 
         self.dtq_id_lineedit = QLineEdit(u"10000")
         self.time_label=QLabel(u"系统时间:") 
         self.time_lineedit = QLineEdit( time.strftime( 
@@ -108,9 +112,9 @@ class QtqBurner(QWidget):
         #返回当前的figure
         self.figure = plt.gcf() 
         self.canvas = figureCanvas(self.figure)
-        plt.title('The answer is packet loss rate statistics histogram')
-        plt.xlabel('UID POS')
-        plt.ylabel('answer count')
+        plt.title(u"答题器丢包统计")
+        plt.xlabel(u'设备ID')
+        plt.ylabel(u"答题次数")
 
         self.burn_button = QPushButton(u"开始测试")
         self.burn_button.setFont(QFont("Courier New", 14, QFont.Bold))
@@ -118,12 +122,15 @@ class QtqBurner(QWidget):
         self.burn_button.setStyleSheet(
             "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
             "QPushButton:hover{border-color:green;background:transparent}")
+        self.browser = QTextBrowser ()
+        self.browser.setFixedHeight(80)
         box = QVBoxLayout()
         box.addLayout(e_hbox)
+        box.addWidget(self.browser)
         box.addWidget(self.canvas)
         box.addWidget(self.burn_button)
         self.setLayout(box)
-        self.resize( 540, 500 )
+        self.resize( 540, 580 )
 
         self.start_button.clicked.connect(self.band_start)
         self.burn_button.clicked.connect(self.time_start)
@@ -137,7 +144,7 @@ class QtqBurner(QWidget):
         self.timer.timeout.connect(self.update_time)
 
     def time_start(self):
-        self.timer.start(1000)
+        self.timer.start(40000)
 
         button = self.sender()
 
@@ -149,6 +156,7 @@ class QtqBurner(QWidget):
         if button_str == u"开始测试":
             self.time_label.setText(u"测试时间:") 
             self.burn_button.setText(u"停止测试")
+
         else:
             self.time_label.setText(u"测试时间:") 
             self.burn_button.setText(u"开始测试")
@@ -156,20 +164,6 @@ class QtqBurner(QWidget):
             if ser != '':
                 input_count = 0
                 ser.close()
-
-
-    def update_time(self):
-        global temp_count
-
-        temp_count = temp_count + 1
-        self.my_timer.inc()
-        self.time_lineedit.setText(
-            '%02d %02d:%02d:%02d' % (self.my_timer.date, self.my_timer.hour, 
-            self.my_timer.min, self.my_timer.s))
-        self.x.append(temp_count)
-        self.y.append(temp_count)
-        plt.bar(self.x,self.y)
-        self.canvas.draw()
 
     def change_uart(self):
         global input_count
@@ -181,13 +175,60 @@ class QtqBurner(QWidget):
         if input_count == 0:
             self.open_uart()
 
+    def update_time(self):
+        global temp_count
+        global input_count
+        global ser
+
+        if ser.isOpen() == True:
+            cmd = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',\
+                    'raise_hand': '1',\
+                    'attendance': '1',\
+                    'questions': [\
+                    {'type': 's','id': '1','range': 'A-D'},\
+                    {'type': 'm','id': '13','range': 'A-F'},\
+                    {'type': 'j','id': '24','range': ''},\
+                    {'type': 'd','id': '27','range': '1-5'},\
+                    {'type': 'g','id': '36','range': ''}]}"
+            ser.write(cmd)
+            self.browser.append(u"<b>S[%d]:</b> %s" %(input_count, cmd))
+            input_count = input_count + 1
+        self.my_timer.inc()
+        self.time_lineedit.setText(
+            '%02d %02d:%02d:%02d' % (self.my_timer.date, self.my_timer.hour, 
+            self.my_timer.min, self.my_timer.s))
+
+        #plt.bar(self.x,self.y)
+        #self.canvas.draw()
+    def autolabel(self,rects):
+	    for rect in rects:
+	        height = rect.get_height()
+	        plt.text(rect.get_x()+rect.get_width()/2., 1.03*height, '%s' % float(height))
+
     def uart_update_text(self,data):
-        self.browser.append(data)
-        print data[34:41]
-        if data[34:41] == "card_id":
-            id_data = "%08X" % string.atoi(str(data[44:54]))
+        self.browser.setText(data)
+        print data[21:37]
+        if data[21:37] == "update_card_info":
+            id_data = "%08X" % string.atoi(str(data[50:60]))
             self.dtq_id_lineedit.setText(id_data)
-        self.exchange_file()
+            self.data_dict[data[50:60]] = 0
+            print "UID:[%s] Count:%d" % (data[50:60],self.data_dict[data[50:60]])
+        if data[21:39] == "update_answer_list":
+            self.data_dict[data[52:62]] = self.data_dict[data[52:62]] + 1
+            print "UID:[%s] Count:%d" % (data[52:62],self.data_dict[data[52:62]])
+            x = []
+            y = []
+            i = []
+            j = 0
+            for key, value in self.data_dict.items():
+                x.append(key)
+                j = j + 1
+                i.append(j)
+                y.append(value)
+            plt.xticks(i,x)
+            rect = plt.bar(i,y,align="center")
+            plt.legend((rect,),(u"图例",))
+            self.canvas.draw()
 
     def uart_scan(self):
         for i in range(256):
@@ -236,9 +277,8 @@ class QtqBurner(QWidget):
                 self.uart_listen_thread.start()
                 cmd = "{'fun':'bind_start'}"
                 ser.write(cmd)
+                self.browser.append(u"<b>S[%d]:</b> %s" %(input_count, cmd))
                 input_count = input_count + 1
-                data = u"<b>S[%d]: </b>" % (input_count-1) + u"%s" % cmd
-                self.uart_update_text(data)
                 self.start_button.setText(u"关闭接收器")
 
 if __name__=='__main__':
