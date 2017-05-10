@@ -90,6 +90,7 @@ class QtqBurner(QWidget):
         super(QtqBurner, self).__init__(parent)
         self.ports_dict = {}
         self.data_dict  = {}
+        self.uid_list   = []
         self.start_time = int(time.time())
         self.setWindowTitle(u"答题器丢包测试工具v0.1.0")
         self.com_combo=QComboBox(self) 
@@ -112,7 +113,7 @@ class QtqBurner(QWidget):
         #返回当前的figure
         self.figure = plt.gcf() 
         self.canvas = figureCanvas(self.figure)
-        plt.title(u"答题器丢包统计")
+        plt.title(u"答题器接包统计")
         plt.xlabel(u'设备ID')
         plt.ylabel(u"答题次数")
 
@@ -198,37 +199,45 @@ class QtqBurner(QWidget):
             '%02d %02d:%02d:%02d' % (self.my_timer.date, self.my_timer.hour, 
             self.my_timer.min, self.my_timer.s))
 
-        #plt.bar(self.x,self.y)
-        #self.canvas.draw()
     def autolabel(self,rects):
-	    for rect in rects:
-	        height = rect.get_height()
-	        plt.text(rect.get_x()+rect.get_width()/2., 1.03*height, '%s' % float(height))
+        for rect in rects:
+            height = rect.get_height()
+            plt.text(rect.get_x()+rect.get_width()/2., 1.03*height, u'%s' % int(height))
 
     def uart_update_text(self,data):
         self.browser.setText(data)
-        print data[21:37]
+        #print data[21:37]
         if data[21:37] == "update_card_info":
             id_data = "%08X" % string.atoi(str(data[50:60]))
             self.dtq_id_lineedit.setText(id_data)
-            self.data_dict[data[50:60]] = 0
-            print "UID:[%s] Count:%d" % (data[50:60],self.data_dict[data[50:60]])
+            if data[50:60] not in self.uid_list:
+                self.data_dict[data[50:60]] = 0
+                self.uid_list.append(data[50:60])
+            #print "UID:[%s] Count:%d" % (data[50:60],self.data_dict[data[50:60]])
         if data[21:39] == "update_answer_list":
-            self.data_dict[data[52:62]] = self.data_dict[data[52:62]] + 1
-            print "UID:[%s] Count:%d" % (data[52:62],self.data_dict[data[52:62]])
-            x = []
-            y = []
-            i = []
-            j = 0
-            for key, value in self.data_dict.items():
-                x.append(key)
-                j = j + 1
-                i.append(j)
-                y.append(value)
-            plt.xticks(i,x)
-            rect = plt.bar(i,y,align="center")
-            plt.legend((rect,),(u"图例",))
-            self.canvas.draw()
+            if data[52:62] in self.uid_list:
+                self.data_dict[data[52:62]] = self.data_dict[data[52:62]] + 1
+                #print "UID:[%s] Count:%d" % (data[52:62],self.data_dict[data[52:62]])
+                y = []
+                i = []
+                j = 0
+                for key in self.uid_list:
+                    if self.data_dict[key] != 0:
+                        j = j + 1
+                        i.append(j)
+                        y.append(self.data_dict[key])
+                self.figure.clear()
+                plt.title(u"答题器接包统计")
+                #plt.xlabel(u'设备ID')
+                plt.ylabel(u"答题次数")
+                plt.xticks(i,self.uid_list,rotation=17)
+                plt.grid() 
+                rect = plt.bar(i,y,align="center",yerr=0.000001)
+                #plt.legend((rect,),(u"图例",))
+
+                self.autolabel(rect)
+                self.canvas.draw()
+                #print self.data_dict
 
     def uart_scan(self):
         for i in range(256):
