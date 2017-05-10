@@ -10,3 +10,4 @@
 > 1. 修改DTQBurner，支持matplotlib图像显示，现在能动态显示直方图
 > 2. 修改DTQDataLost，基本完成答题数据次数的统计
 > 3. 修改DTQDataLost，修改统计方式，优化显示效果
+> 4. 修改DTQDataLost，优化时间显示逻辑
