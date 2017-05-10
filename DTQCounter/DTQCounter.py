@@ -87,9 +87,9 @@ class UartListen(QThread):
                 if len(recv_str) > 0:
                     self.emit(SIGNAL('output(QString)'),recv_str)
 
-class QtqBurner(QWidget):
+class DtqCounter(QWidget):
     def __init__(self, parent=None):
-        super(QtqBurner, self).__init__(parent)
+        super(DtqCounter, self).__init__(parent)
         self.ports_dict = {}
         self.data_dict  = {}
         self.uid_list   = []
@@ -331,7 +331,7 @@ class QtqBurner(QWidget):
 
 if __name__=='__main__':
     app = QApplication(sys.argv)
-    datburner = QtqBurner()
+    datburner = DtqCounter()
     datburner.show()
     app.exec_()
 

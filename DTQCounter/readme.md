@@ -11,3 +11,4 @@
 > 2. 修改DTQDataLost，基本完成答题数据次数的统计
 > 3. 修改DTQDataLost，修改统计方式，优化显示效果
 > 4. 修改DTQDataLost，优化时间显示逻辑
+> 5. 修改DTQDataLost为DTQCounter
