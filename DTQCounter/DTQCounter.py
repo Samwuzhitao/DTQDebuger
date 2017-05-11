@@ -224,7 +224,7 @@ class DtqCounter(QWidget):
     def autolabel(self,rects):
         for rect in rects:
             height = rect.get_height()
-            plt.text(rect.get_x()+rect.get_width()/2., 1.03*height, u'%s' % int(height))
+            plt.text(rect.get_x()+rect.get_width()/2, height, u'%s' % int(height))
 
     def uart_update_text(self,data):
         global input_count
@@ -257,7 +257,10 @@ class DtqCounter(QWidget):
                 plt.title(u"答题器接包统计")
                 #plt.xlabel(u'设备ID')
                 plt.ylabel(u"答题次数")
-                plt.xticks(i,self.uid_list,rotation=17)
+                rotation_instance = j*2
+                if rotation_instance >= 90:
+                	rotation_instance = 90
+                plt.xticks(i,self.uid_list,rotation=rotation_instance)
                 plt.grid() 
                 rect = plt.bar(i,y,align="center",yerr=0.000001)
                 #plt.legend((rect,),(u"图例",))

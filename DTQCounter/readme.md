@@ -12,3 +12,4 @@
 > 3. 修改DTQDataLost，修改统计方式，优化显示效果
 > 4. 修改DTQDataLost，优化时间显示逻辑
 > 5. 修改DTQDataLost为DTQCounter
+> 6. 修改DTQCounter，增加X下标自动调整旋转角度的功能
