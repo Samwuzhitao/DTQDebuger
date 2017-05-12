@@ -121,6 +121,9 @@ class DtqCounter(QWidget):
         plt.title(u"答题器接包统计")
         plt.xlabel(u'设备ID')
         plt.ylabel(u"答题次数")
+        plt.xticks([1,2,3],['uID1','uID2','uID3'])
+        plt.grid()
+
 
         self.burn_button = QPushButton(u"开始自动发送测试")
         self.burn_button.setFont(QFont("Courier New", 14, QFont.Bold))
@@ -132,9 +135,9 @@ class DtqCounter(QWidget):
         self.browser.setFixedHeight(80)
         box = QVBoxLayout()
         box.addLayout(e_hbox)
-        box.addWidget(self.browser)
         box.addWidget(self.canvas)
         box.addWidget(self.burn_button)
+        box.addWidget(self.browser)
         self.setLayout(box)
         self.resize( 540, 580 )
 

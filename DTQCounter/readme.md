@@ -13,3 +13,7 @@
 > 4. 修改DTQDataLost，优化时间显示逻辑
 > 5. 修改DTQDataLost为DTQCounter
 > 6. 修改DTQCounter，增加X下标自动调整旋转角度的功能
+
+* **时间**：2017-05-12
+* **描述** :
+> 1. 修改DTQCounter，修改初始化界面
