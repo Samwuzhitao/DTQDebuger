@@ -424,13 +424,13 @@ class DtqDebuger(QWidget):
         button_str = button.text()
 
         if button_str == u"添加固件":
-            temp_image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './'))
+            temp_image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './', "bin files(*.bin)"))
             if len(temp_image_path) > 0:
                 self.image_browser.setText(temp_image_path)
                 image_path = temp_image_path
 
         if button_str == u"添加脚本":
-            temp_image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './'))
+            temp_image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './', "txt files(*.txt)"))
             if len(temp_image_path) > 0:
                 self.script_browser.setText(temp_image_path)
                 self.cmd_file_name = temp_image_path
