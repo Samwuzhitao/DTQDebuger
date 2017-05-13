@@ -41,14 +41,18 @@ class UartListen(QThread):
         self.working  = True 
         self.num      = 0 
         self.info_str = ''
-        self.hex_revice  = HexDecode()
-        self.json_revice = JsonDecode()
-        self.bin_decode = BinDecode()
-        self.ReviceFunSets           = {
+        self.hex_revice    = HexDecode()
+        self.json_revice   = JsonDecode()
+        self.bin_decode    = BinDecode()
+        self.ReviceFunSets = {
             0:self.uart_down_load_image_0,
             1:self.uart_down_load_image_1,
             2:self.uart_down_load_image_2,
             3:self.uart_down_load_image_3,
+        }
+        self.DecodeFunSets = {
+            0:self.json_revice.r_machine,
+            1:self.hex_revice.r_machine,
         }
 
     def __del__(self): 
@@ -63,13 +67,10 @@ class UartListen(QThread):
 
         recv_str      = ""
         ISOTIMEFORMAT = '%Y-%m-%d %H:%M:%S'
+        self.hex_revice.show_style = hex_decode_show_style
+        str1 = self.DecodeFunSets[decode_type_flag](read_char)
 
-        if decode_type_flag == 0:
-            str1 = self.json_revice.r_machine(read_char)
-        if decode_type_flag == 1:
-            self.hex_revice.show_style = hex_decode_show_style
-            str1 = self.hex_revice.r_machine(read_char)
-        if len(str1) != 0:
+        if str1 :
             now = time.strftime( ISOTIMEFORMAT,
                 time.localtime(time.time()))
             if show_time_flag == 1:
@@ -102,15 +103,23 @@ class UartListen(QThread):
 
         recv_str = ""
         retuen_flag = 2
-
+        
         if read_char == 'C':
             recv_str = u"STEP[2]:发送镜像信息..."
 
             ack = '06'
             ack = ack.decode("hex")
             ser.write(ack)
-            ser.write(self.bin_decode.soh_pac(image_path))
-            retuen_flag = 3
+            print image_path
+            data = self.bin_decode.soh_pac(image_path)
+
+            if self.bin_decode.file_size > 0:
+                retuen_flag = 3
+                ser.write(data)
+            else:
+                recv_str = u"ERROR:文件内容为空！"
+                ser.write('a') 
+                retuen_flag = 0
 
         return retuen_flag,recv_str
 
@@ -124,7 +133,6 @@ class UartListen(QThread):
             self.info_str += read_char
             #print self.info_str 
             if char == '0A':
-                #print self.info_str 
                 recv_str = self.info_str
                 self.info_str = ''
                 if recv_str[0:5] == 'Start':
@@ -133,6 +141,7 @@ class UartListen(QThread):
 
         #print "%s self.bin_decode.over = %d" % (char,self.bin_decode.over)
         if char == '06':
+            # print " File index = %d sum = %d" % (self.bin_decode.send_index, self.bin_decode.file_size)
             revice_rate = self.bin_decode.send_index*100.0 / self.bin_decode.file_size
             temp_str = int(revice_rate / 2.5)*'#' + (40-int(revice_rate / 2.5))*' '
 
@@ -160,7 +169,6 @@ class UartListen(QThread):
         if char == '18':
             recv_str = u"接收到 CA..."
 
-
         return retuen_flag,recv_str
 
     def run(self): 
@@ -174,7 +182,7 @@ class UartListen(QThread):
                 #print "status = %d char = %02X " % (down_load_image_flag, ord(read_char))
                 next_flag,recv_str = self.ReviceFunSets[down_load_image_flag]( read_char )
 
-                if len(recv_str) > 0:
+                if recv_str :
                     if down_load_image_flag != 1:
                         self.emit(SIGNAL('protocol_message(QString)'),recv_str)
                         #print 'protocol_message(QString)',
@@ -245,7 +253,7 @@ class DtqDebuger(QWidget):
         self.baudrate_unit_label=QLabel(u"bps ") 
         self.baudrate_unit_label.setFixedSize(20, 20)
 
-        self.displaystyle_label=QLabel(u"显示格式：")
+        self.displaystyle_label=QLabel(u"接收显示：")
         self.display_combo=QComboBox(self) 
         self.display_combo.addItem(u'16进制')
         self.display_combo.addItem(u'字符串')
@@ -494,7 +502,6 @@ class DtqDebuger(QWidget):
             decode_type_flag = 1
             data = unicode(self.send_cmd_combo.currentText())
             self.send_lineedit.setText(self.hex_cmd_dict[data])
-        #print decode_type_flag
 
     def uart_download_image(self):
         global down_load_image_flag
@@ -502,7 +509,7 @@ class DtqDebuger(QWidget):
         
         self.send_cmd_combo.setCurrentIndex(self.send_cmd_combo.
             findText(u'下载程序'))
-        if len(image_path) > 0:
+        if image_path :
             image_size  = os.path.getsize(image_path)
             down_load_image_flag = 1
             self.process_bar = 0
@@ -570,7 +577,7 @@ class DtqDebuger(QWidget):
         now = time.strftime( ISOTIMEFORMAT, time.localtime( time.time() ) )
 
         if input_count == 0:
-            if serial_port[:-1] == 'COM':
+            if serial_port:
                 try:
                     logging.info(u"尝试打开串口%s" % self.ports_dict[serial_port])
                     ser = serial.Serial( self.ports_dict[serial_port], 
@@ -598,13 +605,12 @@ class DtqDebuger(QWidget):
                 else:
                     self.browser.append(u"<b>S[%d]:</b> %s" %(input_count, data))
                 input_count = input_count + 1
-
+                logging.debug(u"发送数据：%s",data)
                 if  decode_type_flag == 1:
                     data = data.replace(' ','')
                     data = data.decode("hex")
                     #print data
                 ser.write(data)
-                logging.debug(u"发送数据：%s",data)
             else:
                 self.browser.append("<font color=red> Open <b>%s</b> \
                     Error!</font>" % ser.portstr )
@@ -618,13 +624,12 @@ class DtqDebuger(QWidget):
                 else:
                     self.browser.append(u"<b>S[%d]:</b> %s" %(input_count, data))
                 input_count = input_count + 1
-
+                logging.debug(u"发送数据[%d]：%s" % (input_count, data))
                 if  decode_type_flag == 1:
                     data = data.replace(' ','')
                     data = data.decode("hex")
-                    #print data
                 ser.write(data)
-                logging.debug(u"发送数据[%d]：%s" % (input_count, data))
+                
             else:
                 self.browser.append("<font color=red> Open <b>%s</b> \
                     Error!</font>" % ser.portstr )

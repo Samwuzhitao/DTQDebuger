@@ -69,9 +69,11 @@ class BinDecode():
     def soh_pac(self,image_path):
         NOP  = 0
         #data_path  = os.path.abspath("../") +'\\data\\'
-        if len(image_path) > 0:
+        if image_path :
             self.file_name  = image_path #unicode(image_path.toUtf8(),'utf-8','ignore') 
             self.file_size  = os.path.getsize(self.file_name)
+            print "File Name: %s " % self.file_name
+            print "File Size: %d " % self.file_size
             data = self.file_name.split("/")[-1]
             data = str(data)
             #os.path.basename(self.file_name)
