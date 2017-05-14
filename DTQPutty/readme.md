@@ -19,3 +19,4 @@
 > 2. 修改DTQPutty，使用Qworkspace将监听到的串口信息，分开显示
 > 3. 修改DTQPutty，增加窗口信息输出合并功能，能将所有信息显示到"Console"窗口
 > 4. 修改DTQPutty，修改菜单栏布局及log信息打印格式
+> 5. 修改DTQPutty，增加添加指令脚本的GUI界面
