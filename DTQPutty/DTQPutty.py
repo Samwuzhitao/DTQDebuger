@@ -45,10 +45,10 @@ class UartListen(QThread):
         self.json_revice   = JsonDecode()
         self.bin_decode    = BinDecode()
         self.ReviceFunSets = {
-            0:self.uart_down_load_image_0,
-            1:self.uart_down_load_image_1,
-            2:self.uart_down_load_image_2,
-            3:self.uart_down_load_image_3,
+            0:self.uart_cmd_decode,
+            1:self.uart_print_decode,
+            2:self.uart_image_start,
+            3:self.uart_image_transport,
         }
         self.DecodeFunSets = {
             0:self.json_revice.r_machine,
@@ -59,7 +59,7 @@ class UartListen(QThread):
         self.working=False
         self.wait()
 
-    def uart_down_load_image_0(self,read_char):
+    def uart_cmd_decode(self,read_char):
         recv_str      = ""
         ISOTIMEFORMAT = '%Y-%m-%d %H:%M:%S'
         self.hex_revice.show_style = self.hex_decode_show_style
@@ -69,15 +69,15 @@ class UartListen(QThread):
             now = time.strftime( ISOTIMEFORMAT,
                 time.localtime(time.time()))
             if self.show_time_flag == 1:
-                recv_str = u"[%s] DTQ@%s:~$ R[%d]: " %
+                recv_str = u"[%s] DTQ@%s:~$ R[%d]: " % \
                            (now, self.ser.portstr, self.input_count) + u"%s" %  str1
             else:
-                recv_str = u"DTQ@%s:~$ R[%d]: " %
+                recv_str = u"DTQ@%s:~$ R[%d]: " % \
                            (self.ser.portstr, self.input_count) + u"%s" % str1
             #print recv_str
         return 0,recv_str
 
-    def uart_down_load_image_1(self,read_char):
+    def uart_print_decode(self,read_char):
         recv_str    = ""
         retuen_flag = 1
 
@@ -93,7 +93,7 @@ class UartListen(QThread):
 
         return retuen_flag,recv_str
 
-    def uart_down_load_image_2(self,read_char):
+    def uart_image_start(self,read_char):
         recv_str = ""
         retuen_flag = 2
 
@@ -116,7 +116,7 @@ class UartListen(QThread):
 
         return retuen_flag,recv_str
 
-    def uart_down_load_image_3(self,read_char):
+    def uart_image_transport(self,read_char):
         recv_str = ""
         retuen_flag = 3
 
@@ -173,10 +173,10 @@ class UartListen(QThread):
 
                 if recv_str :
                     if self.down_load_image_flag != 1:
-                        self.emit(SIGNAL('protocol_message(QString)'),recv_str)
+                        self.emit(SIGNAL('protocol_message(QString, QString)'),self.ser.portstr,recv_str)
                         #print 'protocol_message(QString)',
                     else:
-                        self.emit(SIGNAL('download_image_info(QString)'),recv_str )
+                        self.emit(SIGNAL('download_image_info(QString, QString)'),self.ser.portstr,recv_str )
                     #print "status = %d char = %s str = %s" % (self.down_load_image_flag, read_char, recv_str)
                 self.down_load_image_flag = next_flag
 
@@ -184,21 +184,24 @@ class DTQPutty(QMainWindow):
     def __init__(self, parent=None):
         self.process_bar = 0
         self.com_monitor_dict = {}
+        self.com_edit_dict    = {}
         super(DTQPutty, self).__init__(parent)
         self.resize(600, 500)
         self.setWindowTitle('DTQPutty V0.1.0')
-        self.setFont(QFont("Courier New", 8, False))
-        self.cmd_edit = QTextEdit()
-        self.cmd_edit.setStyleSheet('QWidget {background-color:#111111}')
-        self.cmd_edit.setTextColor(QColor(200,200,200))
-        self.setCentralWidget(self.cmd_edit)
+        self.workSpace=QWorkspace()
+        self.setCentralWidget(self.workSpace)
 
         self.dock1=QDockWidget(u"当前连接",self)
         self.dock1.setFeatures(QDockWidget.DockWidgetMovable)
         self.dock1.setAllowedAreas(Qt.LeftDockWidgetArea|Qt.RightDockWidgetArea)
-        self.te1=QListWidget()
-        self.te1.setFixedWidth(100)
-        self.dock1.setWidget(self.te1)
+        self.tree =QTreeWidget()
+        self.tree.setColumnCount(2)
+        self.tree.setHeaderLabels([u'串口号',u'参数'])
+        self.tree.setColumnWidth(0, 90)
+        self.tree.setColumnWidth(1, 50)
+        self.tree.setFixedWidth(150)
+
+        self.dock1.setWidget(self.tree)
         self.addDockWidget(Qt.LeftDockWidgetArea,self.dock1)
 
         self.statusBar()
@@ -235,26 +238,59 @@ class DTQPutty(QMainWindow):
         self.connection.addAction(self.dis_connect)
         self.connection.addAction(self.re_connect)
 
+        self.cascade=QAction(u"层叠",self)
+        self.tile=QAction(u"平铺",self)
+        self.merge=QAction(u"合并",self)
+        self.window = self.menubar.addMenu(u'&窗口管理')
+        self.window.addAction(self.cascade)
+        self.window.addAction(self.tile)
+        self.window.addAction(self.merge)
+        self.connect(self.tile,SIGNAL("triggered()"),self.workSpace,SLOT("tile()"))
+        self.connect(self.cascade,SIGNAL("triggered()"),self.workSpace,SLOT("cascade()"))
+
         # 退出程序
         self.connect(self.exit, SIGNAL('triggered()'), SLOT('close()'))
         # 新的连接
         self.connect(self.new_session, SIGNAL('triggered()'), self.open_new_session)
         # 更新程序
         self.connect(self.update_iamge, SIGNAL('triggered()'), self.update_image)
+        # 串口连接管理
+        self.connect(self.tree, SIGNAL("itemDoubleClicked (QTreeWidgetItem *,int)"), self.itemDoubleClicked)
+        # self.connect(self.tree, SIGNAL("itemClicked (QTreeWidgetItem *,int)"), self.itemClicked)
 
+    def itemDoubleClicked(self,item, column):
+        if item.text(0)[0:3] == 'COM':
+            print item.text(0)
 
     def open_new_session(self):
         com = COMSetting.get_port()
         if com :
-            self.cmd_edit.append("Open %s OK!" % com.portstr)
+
             logging.info(u"打开串口")
-            self.te1.addItem(com.portstr)
+            self.root= QTreeWidgetItem(self.tree)
+            self.root.setText(0, com.portstr)
+            child1 = QTreeWidgetItem(self.root)
+            child1.setText(0,'SPEED')
+            child1.setText(1, "%d" % com.baudrate)
+
+            window1=QMainWindow()
+            window1.setWindowTitle(com.portstr)
+            self.com_edit_dict[com.portstr] = QTextEdit()
+            self.com_edit_dict[com.portstr].setStyleSheet('QWidget {background-color:#111111}')
+            self.com_edit_dict[com.portstr].setFont(QFont("Courier New", 8, False))
+            self.com_edit_dict[com.portstr].setTextColor(QColor(200,200,200))
+            window1.setCentralWidget(self.com_edit_dict[com.portstr])
+            self.com_edit_dict[com.portstr].append("Open %s OK!" % com.portstr)
+            self.workSpace.addWindow(window1)
+            window1.show()
+            window1.showMaximized()
+
             self.com_monitor_dict[com.portstr] = UartListen(com)
             self.connect(self.com_monitor_dict[com.portstr],
-                         SIGNAL('protocol_message(QString)'),
+                         SIGNAL('protocol_message(QString, QString)'),
                          self.uart_update_text)
             self.connect(self.com_monitor_dict[com.portstr],
-                         SIGNAL('download_image_info(QString)'),
+                         SIGNAL('download_image_info(QString, QString)'),
                          self.uart_update_download_image_info)
             self.com_monitor_dict[com.portstr].start()
             self.setWindowTitle(com.portstr + '-DTQPutty V0.1.0')
@@ -263,14 +299,9 @@ class DTQPutty(QMainWindow):
             self.cmd_edit.append(u"Error:打开串口出错！")
 
     def update_image(self):
-        com = COMSetting.get_port()
-        if com :
-            self.cmd_edit.append("Open %s OK!" % com.portstr)
-        else:
-            self.cmd_edit.append(u"Error:打开串口出错！")
+        print "1111"
 
-    def uart_update_download_image_info(self,data):
-        global ser
+    def uart_update_download_image_info(self,ser_str,data):
         global down_load_image_flag
 
         if down_load_image_flag == 2:
@@ -279,8 +310,9 @@ class DTQPutty(QMainWindow):
         if data[7:8] == '2':
             ser.write('1')
 
-    def uart_update_text(self,data):
-        cursor =  self.cmd_edit.textCursor()
+    def uart_update_text(self,ser_str,data):
+        ser = str(ser_str)
+        cursor = self.com_edit_dict[ser].textCursor()
         cursor.movePosition(QTextCursor.End)
 
         if data[-1] == '%':
@@ -289,15 +321,15 @@ class DTQPutty(QMainWindow):
                 cursor.movePosition(QTextCursor.StartOfLine,QTextCursor.KeepAnchor)
                 cursor.selectedText()
                 cursor.removeSelectedText()
-                self.cmd_edit.setTextCursor(cursor)
-                self.cmd_edit.insertPlainText(data)
+                self.com_edit_dict[ser].setTextCursor(cursor)
+                self.com_edit_dict[ser].insertPlainText(data)
             else:
-                self.cmd_edit.setTextCursor(cursor)
-                self.cmd_edit.append(data)
+                self.com_edit_dict[ser].setTextCursor(cursor)
+                self.com_edit_dict[ser].append(data)
             self.process_bar = self.process_bar + 1
         else:
-            self.cmd_edit.setTextCursor(cursor)
-            self.cmd_edit.append(data)
+            self.com_edit_dict[ser].setTextCursor(cursor)
+            self.com_edit_dict[ser].append(data)
         #print data
         logging.debug(u"接收数据：%s",data)
 
