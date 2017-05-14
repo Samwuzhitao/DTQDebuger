@@ -25,7 +25,7 @@ logging.basicConfig ( # 配置日志输出的方式及格式
     level = logging.DEBUG,
     filename = 'log.txt',
     filemode = 'w',
-    format = u'【%(asctime)s】 %(filename)s [line:%(lineno)d] %(levelname)s %(message)s',
+    format = u'【%(asctime)s】 %(filename)s [line:%(lineno)d] %(message)s',
 )
 
 class UartListen(QThread):
@@ -186,7 +186,7 @@ class DTQPutty(QMainWindow):
         self.workSpace=QWorkspace()
         self.setCentralWidget(self.workSpace)
 
-        self.create_new_window("Console")
+        self.create_new_window("CONSOLE")
 
         self.dock1=QDockWidget(u"当前连接",self)
         self.dock1.setFeatures(QDockWidget.DockWidgetMovable)
@@ -198,52 +198,50 @@ class DTQPutty(QMainWindow):
         self.tree.setColumnWidth(1, 50)
         self.tree.setFixedWidth(150)
 
+        self.root= QTreeWidgetItem(self.tree)
+        self.root.setText(0, "CONSOLE")
+
         self.dock1.setWidget(self.tree)
         self.addDockWidget(Qt.LeftDockWidgetArea,self.dock1)
 
         self.statusBar()
         self.menubar = self.menuBar()
-
-        self.exit = QAction('Exit', self)
-        self.exit.setShortcut('Ctrl+Q')
-        self.exit.setStatusTip(u'退出')
-
-        self.new_session = QAction('New Session', self)
-        self.new_session.setShortcut('Ctrl+O')
-        self.new_session.setStatusTip(u'创建一个新的会话')
-
-        self.operatopn = self.menubar.addMenu(u'&设置')
-        self.operatopn.addAction(self.exit)
-        self.operatopn.addAction(self.new_session)
-
-        self.update_iamge = QAction(u'更新镜像', self)
-        self.update_iamge.setShortcut('Ctrl+U')
-        self.update_iamge.setStatusTip(u'更新接收器程序')
-
-        self.image = self.menubar.addMenu(u'&工具')
-        self.image.addAction(self.update_iamge)
-
+        # 连接
         self.dis_connect = QAction(u'断开连接', self)
         self.dis_connect.setShortcut('Ctrl+D')
         self.dis_connect.setStatusTip(u'断开与接收器的连接')
-
+        self.new_session = QAction('New Session', self)
+        self.new_session.setShortcut('Ctrl+O')
+        self.new_session.setStatusTip(u'创建一个新的会话')
         self.re_connect = QAction(u'重新连接', self)
         self.re_connect.setShortcut('Ctrl+R')
         self.re_connect.setStatusTip(u'重新连接接收器')
-
         self.connection = self.menubar.addMenu(u'&连接管理')
+        self.connection.addAction(self.new_session)
         self.connection.addAction(self.dis_connect)
         self.connection.addAction(self.re_connect)
+        # 设置
+        self.exit = QAction('Exit', self)
+        self.exit.setShortcut('Ctrl+Q')
+        self.exit.setStatusTip(u'退出')
+        self.operatopn = self.menubar.addMenu(u'&设置')
+        self.operatopn.addAction(self.exit)
+        # 工具
+        self.update_iamge = QAction(u'更新镜像', self)
+        self.update_iamge.setShortcut('Ctrl+U')
+        self.update_iamge.setStatusTip(u'更新接收器程序')
+        self.image = self.menubar.addMenu(u'&工具')
+        self.image.addAction(self.update_iamge)
 
+        # 窗口
         self.tile=QAction(u"平铺",self)
         self.tile.setShortcut('Ctrl+T')
         self.merge=QAction(u"合并",self)
         self.merge.setShortcut('Ctrl+M')
-        self.window = self.menubar.addMenu(u'&窗口管理')
+        self.window = self.menubar.addMenu(u'&窗口')
         self.window.addAction(self.tile)
         self.window.addAction(self.merge)
         self.connect(self.tile,SIGNAL("triggered()"),self.workSpace,SLOT("tile()"))
-        self.connect(self.cascade,SIGNAL("triggered()"),self.workSpace,SLOT("cascade()"))
         self.connect(self.merge,SIGNAL("triggered()"),self.merge_display)
 
         # 退出程序
@@ -254,11 +252,12 @@ class DTQPutty(QMainWindow):
         self.connect(self.update_iamge, SIGNAL('triggered()'), self.update_image)
         # 串口连接管理
         self.connect(self.tree, SIGNAL("itemDoubleClicked (QTreeWidgetItem *,int)"), self.itemDoubleClicked)
-        # self.connect(self.tree, SIGNAL("itemClicked (QTreeWidgetItem *,int)"), self.itemClicked)
 
     def itemDoubleClicked(self,item, column):
-        if item.text(0)[0:3] == 'COM':
-            print item.text(0)
+        com_name = str(item.text(0))
+        if com_name[0:2] == 'CO':
+            self.com_window_dict[com_name].show()
+            # print com_name
 
     def create_new_window(self,name):
         # 创建显示窗口
@@ -302,7 +301,7 @@ class DTQPutty(QMainWindow):
             self.setWindowTitle(com.portstr + '-DTQPutty V0.1.0')
             logging.info(u"启动串口监听线程!")
         else:
-            self.com_edit_dict["Console"].append(u"Error:打开串口出错！")
+            self.com_edit_dict["CONSOLE"].append(u"Error:打开串口出错！")
 
     def update_image(self):
         print "1111"
@@ -326,7 +325,7 @@ class DTQPutty(QMainWindow):
         if self.mearge_flag == 0:
             self.uart_update_text(ser_str,data)
         else:
-            self.uart_update_text("Console",data)
+            self.uart_update_text("CONSOLE",data)
 
     def uart_update_text(self,ser_str,data):
         ser = str(ser_str)
