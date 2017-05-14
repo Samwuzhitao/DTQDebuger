@@ -35,7 +35,6 @@ class UartListen(QThread):
         self.num      = 0
         self.ser      = ser
         self.input_count      = 0
-        self.show_time_flag   = 0
         self.decode_type_flag = 0
         self.hex_decode_show_style = 1
         self.down_load_image_flag  = 0
@@ -66,15 +65,9 @@ class UartListen(QThread):
         str1 = self.DecodeFunSets[self.decode_type_flag](read_char)
 
         if str1 :
-            now = time.strftime( ISOTIMEFORMAT,
-                time.localtime(time.time()))
-            if self.show_time_flag == 1:
-                recv_str = u"[%s] DTQ@%s:~$ R[%d]: " % \
+            now = time.strftime( ISOTIMEFORMAT,time.localtime(time.time()))
+            recv_str = u"[%s]@%s:~$ R[%d]: " % \
                            (now, self.ser.portstr, self.input_count) + u"%s" %  str1
-            else:
-                recv_str = u"DTQ@%s:~$ R[%d]: " % \
-                           (self.ser.portstr, self.input_count) + u"%s" % str1
-            #print recv_str
         return 0,recv_str
 
     def uart_print_decode(self,read_char):
@@ -185,11 +178,15 @@ class DTQPutty(QMainWindow):
         self.process_bar = 0
         self.com_monitor_dict = {}
         self.com_edit_dict    = {}
+        self.com_window_dict  = {}
+        self.mearge_flag      = 0
         super(DTQPutty, self).__init__(parent)
         self.resize(600, 500)
         self.setWindowTitle('DTQPutty V0.1.0')
         self.workSpace=QWorkspace()
         self.setCentralWidget(self.workSpace)
+
+        self.create_new_window("Console")
 
         self.dock1=QDockWidget(u"当前连接",self)
         self.dock1.setFeatures(QDockWidget.DockWidgetMovable)
@@ -238,15 +235,16 @@ class DTQPutty(QMainWindow):
         self.connection.addAction(self.dis_connect)
         self.connection.addAction(self.re_connect)
 
-        self.cascade=QAction(u"层叠",self)
         self.tile=QAction(u"平铺",self)
+        self.tile.setShortcut('Ctrl+T')
         self.merge=QAction(u"合并",self)
+        self.merge.setShortcut('Ctrl+M')
         self.window = self.menubar.addMenu(u'&窗口管理')
-        self.window.addAction(self.cascade)
         self.window.addAction(self.tile)
         self.window.addAction(self.merge)
         self.connect(self.tile,SIGNAL("triggered()"),self.workSpace,SLOT("tile()"))
         self.connect(self.cascade,SIGNAL("triggered()"),self.workSpace,SLOT("cascade()"))
+        self.connect(self.merge,SIGNAL("triggered()"),self.merge_display)
 
         # 退出程序
         self.connect(self.exit, SIGNAL('triggered()'), SLOT('close()'))
@@ -262,10 +260,24 @@ class DTQPutty(QMainWindow):
         if item.text(0)[0:3] == 'COM':
             print item.text(0)
 
+    def create_new_window(self,name):
+        # 创建显示窗口
+        self.com_window_dict[name] = QMainWindow()
+        self.com_window_dict[name].setWindowTitle(name)
+        self.com_edit_dict[name] = QTextEdit()
+        self.com_edit_dict[name].setStyleSheet('QWidget {background-color:#111111}')
+        self.com_edit_dict[name].setFont(QFont("Courier New", 8, False))
+        self.com_edit_dict[name].setTextColor(QColor(200,200,200))
+        self.com_window_dict[name].setCentralWidget(self.com_edit_dict[name])
+        self.com_edit_dict[name].append("Open %s OK!" % name)
+        self.workSpace.addWindow(self.com_window_dict[name])
+        self.com_window_dict[name].show()
+        self.com_window_dict[name].showMaximized()
+
     def open_new_session(self):
         com = COMSetting.get_port()
         if com :
-
+            # 增加配置信息显示
             logging.info(u"打开串口")
             self.root= QTreeWidgetItem(self.tree)
             self.root.setText(0, com.portstr)
@@ -273,30 +285,24 @@ class DTQPutty(QMainWindow):
             child1.setText(0,'SPEED')
             child1.setText(1, "%d" % com.baudrate)
 
-            window1=QMainWindow()
-            window1.setWindowTitle(com.portstr)
-            self.com_edit_dict[com.portstr] = QTextEdit()
-            self.com_edit_dict[com.portstr].setStyleSheet('QWidget {background-color:#111111}')
-            self.com_edit_dict[com.portstr].setFont(QFont("Courier New", 8, False))
-            self.com_edit_dict[com.portstr].setTextColor(QColor(200,200,200))
-            window1.setCentralWidget(self.com_edit_dict[com.portstr])
-            self.com_edit_dict[com.portstr].append("Open %s OK!" % com.portstr)
-            self.workSpace.addWindow(window1)
-            window1.show()
-            window1.showMaximized()
+            # 创建显示窗口
+            self.create_new_window(com.portstr)
 
+            # 创建监听线程
             self.com_monitor_dict[com.portstr] = UartListen(com)
+
             self.connect(self.com_monitor_dict[com.portstr],
                          SIGNAL('protocol_message(QString, QString)'),
-                         self.uart_update_text)
+                         self.update_edit)
             self.connect(self.com_monitor_dict[com.portstr],
                          SIGNAL('download_image_info(QString, QString)'),
                          self.uart_update_download_image_info)
+
             self.com_monitor_dict[com.portstr].start()
             self.setWindowTitle(com.portstr + '-DTQPutty V0.1.0')
             logging.info(u"启动串口监听线程!")
         else:
-            self.cmd_edit.append(u"Error:打开串口出错！")
+            self.com_edit_dict["Console"].append(u"Error:打开串口出错！")
 
     def update_image(self):
         print "1111"
@@ -305,10 +311,22 @@ class DTQPutty(QMainWindow):
         global down_load_image_flag
 
         if down_load_image_flag == 2:
-            self.uart_update_text(data)
+            self.uart_update_text(ser_str,data)
 
         if data[7:8] == '2':
-            ser.write('1')
+            self.com_monitor_dict[com.portstr].ser.write('1')
+
+    def merge_display(self):
+        if self.mearge_flag == 0:
+            self.mearge_flag = 1
+        else:
+            self.mearge_flag = 0
+
+    def update_edit(self,ser_str,data):
+        if self.mearge_flag == 0:
+            self.uart_update_text(ser_str,data)
+        else:
+            self.uart_update_text("Console",data)
 
     def uart_update_text(self,ser_str,data):
         ser = str(ser_str)
