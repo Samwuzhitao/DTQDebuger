@@ -320,13 +320,13 @@ class DTQPutty(QMainWindow):
         # 新的连接
         self.connect(self.new_session, SIGNAL('triggered()'), self.open_new_session)
         # 更新程序
-        self.connect(self.update_iamge, SIGNAL('triggered()'), self.update_image)
+        self.connect(self.add_script, SIGNAL('triggered()'), self.add_script_fun)
         # 串口连接管理
         self.connect(self.tree_com, SIGNAL("itemDoubleClicked (QTreeWidgetItem *,int)"),
-        	self.tree_com_itemDoubleClicked)
+            self.tree_com_itemDoubleClicked)
         # 脚本指令操作
         self.connect(self.tree_script, SIGNAL("itemDoubleClicked (QTreeWidgetItem *,int)"),
-        	self.tree_script_itemDoubleClicked)
+            self.tree_script_itemDoubleClicked)
 
     def tree_com_itemDoubleClicked(self,item, column):
         com_name = unicode(item.text(0))
@@ -388,8 +388,26 @@ class DTQPutty(QMainWindow):
         else:
             self.com_edit_dict["CONSOLE"].append(u"Error:打开串口出错！")
 
-    def update_image(self):
-        print "1111"
+    def add_script_fun(self):
+        temp_image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './', "txt files(*.inf)"))
+
+        f = open(temp_image_path,'rU')
+        cmds =f.readlines()
+        #print cmds
+        f.close()
+        name = unicode(temp_image_path.split("/")[-1])
+        new_script = QTreeWidgetItem(self.tree_script)
+        new_script.setText(0, name.split(".")[0] )
+
+        for i in range(len(cmds)/2):
+            item = cmds[i*2]
+            item = unicode(item.decode('utf-8'))
+            if item[0:1] == "<":
+                cmd_dsc = item[4:]
+            else:
+               cmd_dsc = item[0:]
+            #print cmd_dsc
+            QTreeWidgetItem(new_script).setText(0, cmd_dsc.split(":")[0])
 
     def uart_update_download_image_info(self,ser_str,data):
         global down_load_image_flag
