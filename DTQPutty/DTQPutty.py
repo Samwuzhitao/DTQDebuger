@@ -226,12 +226,14 @@ class DTQPutty(QMainWindow):
         self.json_cmd_key.append(u'14.停止考勤')
         self.json_cmd_dict[self.json_cmd_key[13]] = u"暂无功能"
 
-        self.resize(600, 600)
+        self.resize(700, 600)
         self.setWindowTitle('DTQPutty V0.1.0')
         self.workSpace = QWorkspace()
         self.setCentralWidget(self.workSpace)
 
         self.create_new_window("CONSOLE")
+        self.com_window_dict["CONSOLE"].show()
+        self.com_window_dict["CONSOLE"].showMaximized()
 
         self.dock_com = QDockWidget(u"当前连接",self)
         self.dock_com.setFeatures(QDockWidget.DockWidgetMovable)
@@ -354,8 +356,6 @@ class DTQPutty(QMainWindow):
         self.com_window_dict[name].setCentralWidget(self.com_edit_dict[name])
         self.com_edit_dict[name].append("Open %s OK!" % name)
         self.workSpace.addWindow(self.com_window_dict[name])
-        self.com_window_dict[name].show()
-        self.com_window_dict[name].showMaximized()
 
     def open_new_session(self):
         com = COMSetting.get_port()
@@ -408,9 +408,9 @@ class DTQPutty(QMainWindow):
 
     def update_edit(self,ser_str,data):
         if self.mearge_flag == 0:
-            self.uart_update_text(ser_str,data)
-        else:
             self.uart_update_text("CONSOLE",data)
+        else:
+            self.uart_update_text(ser_str,data)
 
     def uart_update_text(self,ser_str,data):
         ser = str(ser_str)
