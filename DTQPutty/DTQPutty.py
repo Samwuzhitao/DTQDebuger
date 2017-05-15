@@ -29,11 +29,12 @@ logging.basicConfig ( # 配置日志输出的方式及格式
 )
 
 class UartListen(QThread):
-    def __init__(self,ser,parent=None):
+    def __init__(self,com,parent=None):
         super(UartListen,self).__init__(parent)
         self.working  = True
         self.num      = 0
-        self.ser      = ser
+        self.com      = com
+        print self.com
         self.input_count      = 0
         self.decode_type_flag = 0
         self.hex_decode_show_style = 1
@@ -67,7 +68,7 @@ class UartListen(QThread):
         if str1 :
             now = time.strftime( ISOTIMEFORMAT,time.localtime(time.time()))
             recv_str = u"[%s]@%s:~$ R[%d]: " % \
-                           (now, self.ser.portstr, self.input_count) + u"%s" %  str1
+                           (now, self.com.portstr, self.input_count) + u"%s" %  str1
         return 0,recv_str
 
     def uart_print_decode(self,read_char):
@@ -95,16 +96,16 @@ class UartListen(QThread):
 
             ack = '06'
             ack = ack.decode("hex")
-            ser.write(ack)
+            com.write(ack)
             #print image_path
             data = self.bin_decode.soh_pac(self.image_path)
 
             if self.bin_decode.file_size > 0:
                 retuen_flag = 3
-                self.ser.write(data)
+                self.com.write(data)
             else:
                 recv_str = u"ERROR:文件内容为空！"
-                self.ser.write('a')
+                self.com.write('a')
                 retuen_flag = 0
 
         return retuen_flag,recv_str
@@ -133,13 +134,13 @@ class UartListen(QThread):
             recv_str = u"STEP[3]:传输镜像文件：%s %3d%%" % (temp_str,revice_rate)
 
             if self.bin_decode.over == 0:
-                self.ser.write(self.bin_decode.stx_pac())
+                self.com.write(self.bin_decode.stx_pac())
 
             if self.bin_decode.over == 1:
                 eot = '04'
                 #print eot
                 eot = eot.decode("hex")
-                self.ser.write(eot)
+                self.com.write(eot)
                 self.bin_decode.over = 2
 
         if char == '43':
@@ -158,29 +159,55 @@ class UartListen(QThread):
 
     def run(self):
         while self.working==True:
-            if self.ser.isOpen() == True:
-                read_char = self.ser.read(1)
+            if self.com.isOpen() == True:
+                read_char = self.com.read(1)
 
                 #print "status = %d char = %02X " % (down_load_image_flag, ord(read_char))
                 next_flag,recv_str = self.ReviceFunSets[self.down_load_image_flag]( read_char )
 
                 if recv_str :
                     if self.down_load_image_flag != 1:
-                        self.emit(SIGNAL('protocol_message(QString, QString)'),self.ser.portstr,recv_str)
+                        self.emit(SIGNAL('protocol_message(QString, QString)'),self.com.portstr,recv_str)
                         #print 'protocol_message(QString)',
                     else:
-                        self.emit(SIGNAL('download_image_info(QString, QString)'),self.ser.portstr,recv_str )
+                        self.emit(SIGNAL('download_image_info(QString, QString)'),self.com.portstr,recv_str )
                     #print "status = %d char = %s str = %s" % (self.down_load_image_flag, read_char, recv_str)
                 self.down_load_image_flag = next_flag
 
 class DTQPutty(QMainWindow):
     def __init__(self, parent=None):
+        super(DTQPutty, self).__init__(parent)
         self.process_bar = 0
         self.com_monitor_dict = {}
+        self.com_dict         = {}
         self.com_edit_dict    = {}
         self.com_window_dict  = {}
         self.mearge_flag      = 0
-        super(DTQPutty, self).__init__(parent)
+        self.json_cmd_dict    = {}
+
+        self.json_cmd_dict[u'清白名单'] = "{'fun':'clear_wl'}"
+        self.json_cmd_dict[u'开启绑定'] = "{'fun':'bind_start'}"
+        self.json_cmd_dict[u'停止绑定'] = "{'fun':'bind_stop'}"
+        self.json_cmd_dict[u'设备信息'] = "{'fun':'get_device_info'}"
+        self.json_cmd_dict[u'发送题目'] = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',\
+            'raise_hand': '1',\
+            'attendance': '1',\
+            'questions': [\
+            {'type': 's','id': '1','range': 'A-D'},\
+            {'type': 'm','id': '13','range': 'A-F'},\
+            {'type': 'j','id': '24','range': ''},\
+            {'type': 'd','id': '27','range': '1-5'},\
+            {'type': 'g','id': '36','range': ''}]}"
+        self.json_cmd_dict[u'查看配置'] ="{'fun':'check_config'}"
+        self.json_cmd_dict[u'设置学号'] ="{'fun':'set_student_id','student_id':'1234'}"
+        self.json_cmd_dict[u'设置信道'] ="{'fun': 'set_channel','tx_ch': '2','rx_ch': '6'}"
+        self.json_cmd_dict[u'设置功率'] ="{'fun':'set_tx_power','tx_power':'5'}"
+        self.json_cmd_dict[u'下载程序'] ="{'fun':'bootloader'}"
+        self.json_cmd_dict[u'2.4g考勤'] ="{'fun':'24g_attendance','attendance_status': '1','attendance_tx_ch': '81'}"
+        self.json_cmd_dict[u'DTQ 自检'] ="{'fun':'dtq_self_inspection'}"
+        self.json_cmd_dict[u'开启考勤'] =u"暂无功能"
+        self.json_cmd_dict[u'停止考勤'] =u"暂无功能"
+
         self.resize(600, 600)
         self.setWindowTitle('DTQPutty V0.1.0')
         self.workSpace = QWorkspace()
@@ -216,30 +243,14 @@ class DTQPutty(QMainWindow):
         self.tree_script.setFixedWidth(150)
         self.function_script = QTreeWidgetItem(self.tree_script)
         self.function_script.setText(0, u"功能测试指令")
-        child2 = QTreeWidgetItem(self.function_script)
-        child2.setText(0,'answer_start')
-        child3 = QTreeWidgetItem(self.function_script)
-        child3.setText(0,'answer_stop')
-        child5 = QTreeWidgetItem(self.function_script)
-        child5.setText(0,'bind_start')
-        child6 = QTreeWidgetItem(self.function_script)
-        child6.setText(0,'bind_stop')
-        child8 = QTreeWidgetItem(self.function_script)
-        child8.setText(0,'attendance_24g')
-        child9 = QTreeWidgetItem(self.function_script)
-        child9.setText(0,'get_device_info')
-        childa = QTreeWidgetItem(self.function_script)
-        childa.setText(0,'check_config')
-        childb = QTreeWidgetItem(self.function_script)
-        childb.setText(0,'set_tx_power')
-        childc = QTreeWidgetItem(self.function_script)
-        childc.setText(0,'set_channel')
-        childd = QTreeWidgetItem(self.function_script)
-        childd.setText(0,'dtq_self_inspection')
+
+        for item in self.json_cmd_dict:
+            QTreeWidgetItem(self.function_script).setText(0,item)
+
         self.power_script = QTreeWidgetItem(self.tree_script)
         self.power_script.setText(0, u"功耗测试脚本")
         child1 = QTreeWidgetItem(self.power_script)
-        child1.setText(0,'answer_start')
+        child1.setText(0,u'设备信息')
 
         self.dock_script.setWidget(self.tree_script)
         self.addDockWidget(Qt.LeftDockWidgetArea,self.dock_script)
@@ -292,12 +303,20 @@ class DTQPutty(QMainWindow):
         # 更新程序
         self.connect(self.update_iamge, SIGNAL('triggered()'), self.update_image)
         # 串口连接管理
-        self.connect(self.tree_com, SIGNAL("itemDoubleClicked (QTreeWidgetItem *,int)"), self.itemDoubleClicked)
+        self.connect(self.tree_com, SIGNAL("itemDoubleClicked (QTreeWidgetItem *,int)"), self.tree_com_itemDoubleClicked)
+        # 脚本指令操作
+        self.connect(self.tree_script, SIGNAL("itemDoubleClicked (QTreeWidgetItem *,int)"), self.tree_script_itemDoubleClicked)
 
-    def itemDoubleClicked(self,item, column):
-        com_name = str(item.text(0))
+    def tree_com_itemDoubleClicked(self,item, column):
+        com_name = unicode(item.text(0))
         if com_name[0:2] == 'CO':
             self.com_window_dict[com_name].show()
+
+    def tree_script_itemDoubleClicked(self,item, column):
+        script_name = unicode(item.text(0))
+        #print self.json_cmd_dict[script_name]
+        for item in self.com_dict:
+            self.com_dict[item].write(self.json_cmd_dict[script_name])
 
     def create_new_window(self,name):
         # 创建显示窗口
@@ -329,6 +348,7 @@ class DTQPutty(QMainWindow):
 
             # 创建监听线程
             self.com_monitor_dict[com.portstr] = UartListen(com)
+            self.com_dict[com.portstr]         = com
 
             self.connect(self.com_monitor_dict[com.portstr],
                          SIGNAL('protocol_message(QString, QString)'),
@@ -353,7 +373,7 @@ class DTQPutty(QMainWindow):
             self.uart_update_text(ser_str,data)
 
         if data[7:8] == '2':
-            self.com_monitor_dict[com.portstr].ser.write('1')
+            self.com_monitor_dict[com.portstr].com.write('1')
 
     def merge_display(self):
         if self.mearge_flag == 0:
