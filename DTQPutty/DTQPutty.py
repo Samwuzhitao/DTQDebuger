@@ -68,9 +68,8 @@ class UartListen(QThread):
         str1 = self.DecodeFunSets[self.decode_type_flag](read_char)
 
         if str1 :
-            now = time.strftime( ISOTIMEFORMAT,time.localtime(time.time()))
-            recv_str = u"[%s]@%s:~$ R[%d]: " % \
-                           (now, self.com.portstr, self.input_count) + u"%s" %  str1
+            recv_str =  str1
+
         return 0,recv_str
 
     def uart_print_decode(self,read_char):
@@ -335,14 +334,11 @@ class DTQPutty(QMainWindow):
 
     def tree_script_itemDoubleClicked(self,item, column):
         script_name = unicode(item.text(0))
-        #print self.json_cmd_dict[script_name]
-        now = time.strftime( ISOTIMEFORMAT,time.localtime(time.time()))
 
         for item in self.com_dict:
             self.com_monitor_dict[item].input_count = self.com_monitor_dict[item].input_count + 1
-            data_str = u"[%s]@%s:~$ S[%d]: " % (now, item, \
-            self.com_monitor_dict[item].input_count) + u"%s" %  self.json_cmd_dict[script_name]
-            self.uart_update_text(item, data_str)
+            index  = u"<font color=lightgreen>S[%d]:</font>" % self.com_monitor_dict[item].input_count
+            self.uart_update_text(item,index, self.json_cmd_dict[script_name])
             self.com_dict[item].write(self.json_cmd_dict[script_name])
 
     def create_new_window(self,name):
@@ -351,7 +347,7 @@ class DTQPutty(QMainWindow):
         self.com_window_dict[name].setWindowTitle(name)
         self.com_edit_dict[name] = QTextEdit()
         self.com_edit_dict[name].setStyleSheet('QWidget {background-color:#111111}')
-        self.com_edit_dict[name].setFont(QFont("Courier New", 8, False))
+        self.com_edit_dict[name].setFont(QFont("Courier New", 10, False))
         self.com_edit_dict[name].setTextColor(QColor(200,200,200))
         self.com_window_dict[name].setCentralWidget(self.com_edit_dict[name])
         self.com_edit_dict[name].append("Open %s OK!" % name)
@@ -425,15 +421,24 @@ class DTQPutty(QMainWindow):
             self.mearge_flag = 0
 
     def update_edit(self,ser_str,data):
-        if self.mearge_flag == 0:
-            self.uart_update_text("CONSOLE",data)
-        else:
-            self.uart_update_text(ser_str,data)
+        index  = u"<font color=lightgreen>R[%d]:</font>" % self.com_monitor_dict[str(ser_str)].input_count
+        self.uart_update_text(str(ser_str), index, data)
 
-    def uart_update_text(self,ser_str,data):
-        ser = str(ser_str)
+    def uart_update_text(self,ser_str,index,data):
+        logging.debug(u"接收数据：%s",data)
+
+        if self.mearge_flag == 0:
+            ser = "CONSOLE"
+        else:
+            ser = str(ser_str)
+
         cursor = self.com_edit_dict[ser].textCursor()
         cursor.movePosition(QTextCursor.End)
+
+        now = time.strftime( ISOTIMEFORMAT,time.localtime(time.time()))
+        header = u"<font color=green>[%s]@%s:~$ </font>" % (now, ser_str)
+
+        data = header + index + u"<font color=white>%s</font>" %  data
 
         if data[-1] == '%':
             if self.process_bar != 0:
@@ -451,7 +456,6 @@ class DTQPutty(QMainWindow):
             self.com_edit_dict[ser].setTextCursor(cursor)
             self.com_edit_dict[ser].append(data)
         #print data
-        logging.debug(u"接收数据：%s",data)
 
 if __name__=='__main__':
     app = QApplication(sys.argv)
