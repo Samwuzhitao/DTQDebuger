@@ -28,6 +28,8 @@ logging.basicConfig ( # 配置日志输出的方式及格式
     format = u'【%(asctime)s】 %(filename)s [line:%(lineno)d] %(message)s',
 )
 
+ISOTIMEFORMAT = '%Y-%m-%d %H:%M:%S'
+
 class UartListen(QThread):
     def __init__(self,com,parent=None):
         super(UartListen,self).__init__(parent)
@@ -61,7 +63,7 @@ class UartListen(QThread):
 
     def uart_cmd_decode(self,read_char):
         recv_str      = ""
-        ISOTIMEFORMAT = '%Y-%m-%d %H:%M:%S'
+
         self.hex_revice.show_style = self.hex_decode_show_style
         str1 = self.DecodeFunSets[self.decode_type_flag](read_char)
 
@@ -184,12 +186,18 @@ class DTQPutty(QMainWindow):
         self.com_window_dict  = {}
         self.mearge_flag      = 0
         self.json_cmd_dict    = {}
+        self.json_cmd_key     = []
 
-        self.json_cmd_dict[u'清白名单'] = "{'fun':'clear_wl'}"
-        self.json_cmd_dict[u'开启绑定'] = "{'fun':'bind_start'}"
-        self.json_cmd_dict[u'停止绑定'] = "{'fun':'bind_stop'}"
-        self.json_cmd_dict[u'设备信息'] = "{'fun':'get_device_info'}"
-        self.json_cmd_dict[u'发送题目'] = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',\
+        self.json_cmd_key.append(u'01.清白名单')
+        self.json_cmd_dict[self.json_cmd_key[0]] = "{'fun':'clear_wl'}"
+        self.json_cmd_key.append(u'02.开启绑定')
+        self.json_cmd_dict[self.json_cmd_key[1]] = "{'fun':'bind_start'}"
+        self.json_cmd_key.append(u'03.停止绑定')
+        self.json_cmd_dict[self.json_cmd_key[2]] = "{'fun':'bind_stop'}"
+        self.json_cmd_key.append(u'04.设备信息')
+        self.json_cmd_dict[self.json_cmd_key[3]] = "{'fun':'get_device_info'}"
+        self.json_cmd_key.append(u'05.发送题目')
+        self.json_cmd_dict[self.json_cmd_key[4]] = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',\
             'raise_hand': '1',\
             'attendance': '1',\
             'questions': [\
@@ -198,15 +206,25 @@ class DTQPutty(QMainWindow):
             {'type': 'j','id': '24','range': ''},\
             {'type': 'd','id': '27','range': '1-5'},\
             {'type': 'g','id': '36','range': ''}]}"
-        self.json_cmd_dict[u'查看配置'] ="{'fun':'check_config'}"
-        self.json_cmd_dict[u'设置学号'] ="{'fun':'set_student_id','student_id':'1234'}"
-        self.json_cmd_dict[u'设置信道'] ="{'fun': 'set_channel','tx_ch': '2','rx_ch': '6'}"
-        self.json_cmd_dict[u'设置功率'] ="{'fun':'set_tx_power','tx_power':'5'}"
-        self.json_cmd_dict[u'下载程序'] ="{'fun':'bootloader'}"
-        self.json_cmd_dict[u'2.4g考勤'] ="{'fun':'24g_attendance','attendance_status': '1','attendance_tx_ch': '81'}"
-        self.json_cmd_dict[u'DTQ 自检'] ="{'fun':'dtq_self_inspection'}"
-        self.json_cmd_dict[u'开启考勤'] =u"暂无功能"
-        self.json_cmd_dict[u'停止考勤'] =u"暂无功能"
+        self.json_cmd_key.append(u'06.查看配置')
+        self.json_cmd_dict[self.json_cmd_key[5]] = "{'fun':'check_config'}"
+        self.json_cmd_key.append(u'07.设置学号')
+        self.json_cmd_dict[self.json_cmd_key[6]] = "{'fun':'set_student_id','student_id':'1234'}"
+        self.json_cmd_key.append(u'08.设置信道')
+        self.json_cmd_dict[self.json_cmd_key[7]] = "{'fun': 'set_channel','tx_ch': '2','rx_ch': '6'}"
+        self.json_cmd_key.append(u'09.设置功率')
+        self.json_cmd_dict[self.json_cmd_key[8]] = "{'fun':'set_tx_power','tx_power':'5'}"
+        self.json_cmd_key.append(u'10.下载程序')
+        self.json_cmd_dict[self.json_cmd_key[9]] = "{'fun':'bootloader'}"
+        self.json_cmd_key.append(u'11.2.4g考勤')
+        self.json_cmd_dict[self.json_cmd_key[10]] = "{'fun':'24g_attendance','attendance_status': '1',\
+            'attendance_tx_ch': '81'}"
+        self.json_cmd_key.append(u'12.DTQ 自检')
+        self.json_cmd_dict[self.json_cmd_key[11]] = "{'fun':'dtq_self_inspection'}"
+        self.json_cmd_key.append(u'13.开启考勤')
+        self.json_cmd_dict[self.json_cmd_key[12]] = u"暂无功能"
+        self.json_cmd_key.append(u'14.停止考勤')
+        self.json_cmd_dict[self.json_cmd_key[13]] = u"暂无功能"
 
         self.resize(600, 600)
         self.setWindowTitle('DTQPutty V0.1.0')
@@ -243,8 +261,7 @@ class DTQPutty(QMainWindow):
         self.tree_script.setFixedWidth(150)
         self.function_script = QTreeWidgetItem(self.tree_script)
         self.function_script.setText(0, u"功能测试指令")
-
-        for item in self.json_cmd_dict:
+        for item in self.json_cmd_key:
             QTreeWidgetItem(self.function_script).setText(0,item)
 
         self.power_script = QTreeWidgetItem(self.tree_script)
@@ -303,9 +320,11 @@ class DTQPutty(QMainWindow):
         # 更新程序
         self.connect(self.update_iamge, SIGNAL('triggered()'), self.update_image)
         # 串口连接管理
-        self.connect(self.tree_com, SIGNAL("itemDoubleClicked (QTreeWidgetItem *,int)"), self.tree_com_itemDoubleClicked)
+        self.connect(self.tree_com, SIGNAL("itemDoubleClicked (QTreeWidgetItem *,int)"),
+        	self.tree_com_itemDoubleClicked)
         # 脚本指令操作
-        self.connect(self.tree_script, SIGNAL("itemDoubleClicked (QTreeWidgetItem *,int)"), self.tree_script_itemDoubleClicked)
+        self.connect(self.tree_script, SIGNAL("itemDoubleClicked (QTreeWidgetItem *,int)"),
+        	self.tree_script_itemDoubleClicked)
 
     def tree_com_itemDoubleClicked(self,item, column):
         com_name = unicode(item.text(0))
@@ -315,7 +334,13 @@ class DTQPutty(QMainWindow):
     def tree_script_itemDoubleClicked(self,item, column):
         script_name = unicode(item.text(0))
         #print self.json_cmd_dict[script_name]
+        now = time.strftime( ISOTIMEFORMAT,time.localtime(time.time()))
+
         for item in self.com_dict:
+            self.com_monitor_dict[item].input_count = self.com_monitor_dict[item].input_count + 1
+            data_str = u"[%s]@%s:~$ S[%d]: " % (now, item, \
+            self.com_monitor_dict[item].input_count) + u"%s" %  self.json_cmd_dict[script_name]
+            self.uart_update_text(item, data_str)
             self.com_dict[item].write(self.json_cmd_dict[script_name])
 
     def create_new_window(self,name):
