@@ -341,18 +341,24 @@ class DTQPutty(QMainWindow):
             self.com_edit_dict["CONSOLE"].append(u"Error:打开串口出错！")
 
     def add_script_fun1(self,file_path,mode):
-        print file_path
+        # print file_path
         f = open(file_path,'rU')
-        cmds =f.readlines()
+        lines = f.readlines()
         f.close()
         name = unicode(file_path.split("/")[-1])
         new_script = QTreeWidgetItem(self.tree_script)
         new_script.setText(0, name.split(".")[0] )
 
+        for line_no in range(len(lines)):
+            # print (line_no,lines[line_no][0:5])
+            if lines[line_no][0:5] == u"[cmd]":
+                start_line = line_no
+
+        cmds = lines[start_line+1:]
+
         for i in range(len(cmds)/2):
             item = cmds[i*2].strip('\n')
             item = unicode(item.decode('utf-8'))
-
 
             if item[0:1] == u"<":
                 cmd_dsc = item[4:]
@@ -366,7 +372,7 @@ class DTQPutty(QMainWindow):
                 # print "cmd = %s" % cmd
                 self.json_cmd_dict[cmd] = cmds[i*2+1].strip('\n')
                 # print "value = %s" % self.json_cmd_dict[cmd]
-            print " index = %02d cmds = %s str_cmd = %s" % (i,cmd,self.json_cmd_dict[cmd])
+            # print " index = %02d cmds = %s str_cmd = %s" % (i,cmd,self.json_cmd_dict[cmd])
             QTreeWidgetItem(new_script).setText(0, cmd)
 
     def add_script_fun(self):
