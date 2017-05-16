@@ -90,7 +90,7 @@ class DTQPutty(QMainWindow):
         self.tree_script.setColumnWidth(0, 90)
         self.tree_script.setFixedWidth(150)
 
-        self.add_script_fun1(u'./data/功能测试指令.inf',1)
+        self.add_script_fun1(u'./data/功能测试指令.inf')
 
         self.dock_script.setWidget(self.tree_script)
         self.addDockWidget(Qt.LeftDockWidgetArea,self.dock_script)
@@ -145,14 +145,41 @@ class DTQPutty(QMainWindow):
         # 串口连接管理
         self.connect(self.tree_com, SIGNAL("itemDoubleClicked (QTreeWidgetItem *,int)"),
             self.tree_com_itemDoubleClicked)
-        # 脚本指令操作
-        self.connect(self.tree_script, SIGNAL("itemDoubleClicked (QTreeWidgetItem *,int)"),
-            self.tree_script_itemDoubleClicked)
+        # 指令机脚本管理
+        self.tree_script.itemDoubleClicked.connect(self.tree_script_doubleClicked)
 
     def tree_com_itemDoubleClicked(self,item, column):
         com_name = unicode(item.text(0))
         if com_name[0:2] == 'CO':
             self.window_dict[com_name].show()
+
+    def tree_script_doubleClicked(self,item, column):
+        cmd_name = unicode(item.text(0))
+        parent=item.parent()
+        index_top = 0
+        index_row = -1
+
+        if parent is None:
+            index_top = self.tree_script.indexOfTopLevelItem(item)
+        else :
+            index_top =  self.tree_script.indexOfTopLevelItem(parent)
+            index_row = parent.indexOfChild(item)
+        # print( u'%s' % cmd_name, index_top, index_row)
+
+        if index_row > -1:
+            for item in self.com_dict:
+                self.monitor_dict[item].input_count = self.monitor_dict[item].input_count + 1
+                index  = u"<font color=lightgreen>S[%d]:</font>" % self.monitor_dict[item].input_count
+                cmd_value = self.script_list[index_top].cmds_dict[cmd_name]
+                self.uart_update_text( item, index, cmd_value)
+                self.com_dict[item].write(cmd_value)
+
+        if index_row == -1:
+            for item in self.com_dict:
+                cmd_value =  u"开始运行脚本：%s ..." % cmd_name
+                self.monitor_dict[item].input_count = self.monitor_dict[item].input_count + 1
+                index  = u"<font color=lightgreen>S[%d]:</font>" % self.monitor_dict[item].input_count
+                self.uart_update_text( item, index, cmd_value)
 
     def tree_script_itemDoubleClicked(self,item, column):
         # print item
@@ -209,7 +236,7 @@ class DTQPutty(QMainWindow):
         else:
             self.com_edit_dict["CONSOLE"].append(u"Error:打开串口出错！")
 
-    def add_script_fun1(self,file_path,mode):
+    def add_script_fun1(self,file_path):
         # print file_path
         f = open(file_path,'rU')
         lines = f.readlines()
@@ -242,16 +269,14 @@ class DTQPutty(QMainWindow):
             #print cmd_dsc
             cmd = cmd_dsc.split(":")[0]
 
-            if mode == 1:
-                # print "cmd = %s" % cmd
-                self.script_list[self.scripts_count].add_cmd(cmd,cmds[i*2+1].strip('\n'))
-                # print " index = %02d cmds = %s str_cmd = %s" % (i,cmd,self.json_cmd_dict[cmd])
+            self.script_list[self.scripts_count].add_cmd(cmd,cmds[i*2+1].strip('\n'))
+            # print " index = %02d cmds = %s str_cmd = %s" % (i,cmd,self.json_cmd_dict[cmd])
             QTreeWidgetItem(new_script).setText(0, cmd)
         self.scripts_count = self.scripts_count + 1
 
     def add_script_fun(self):
         temp_image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './', "txt files(*.inf)"))
-        self.add_script_fun1(temp_image_path,0)
+        self.add_script_fun1(temp_image_path)
 
     def uart_update_download_image_info(self,ser_str,data):
         global down_load_image_flag
