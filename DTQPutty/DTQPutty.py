@@ -187,44 +187,6 @@ class DTQPutty(QMainWindow):
         self.json_cmd_dict    = {}
         self.json_cmd_key     = []
 
-        self.json_cmd_key.append(u'01.清白名单')
-        self.json_cmd_dict[self.json_cmd_key[0]] = "{'fun':'clear_wl'}"
-        self.json_cmd_key.append(u'02.开启绑定')
-        self.json_cmd_dict[self.json_cmd_key[1]] = "{'fun':'bind_start'}"
-        self.json_cmd_key.append(u'03.停止绑定')
-        self.json_cmd_dict[self.json_cmd_key[2]] = "{'fun':'bind_stop'}"
-        self.json_cmd_key.append(u'04.设备信息')
-        self.json_cmd_dict[self.json_cmd_key[3]] = "{'fun':'get_device_info'}"
-        self.json_cmd_key.append(u'05.发送题目')
-        self.json_cmd_dict[self.json_cmd_key[4]] = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',\
-            'raise_hand': '1',\
-            'attendance': '1',\
-            'questions': [\
-            {'type': 's','id': '1','range': 'A-D'},\
-            {'type': 'm','id': '13','range': 'A-F'},\
-            {'type': 'j','id': '24','range': ''},\
-            {'type': 'd','id': '27','range': '1-5'},\
-            {'type': 'g','id': '36','range': ''}]}"
-        self.json_cmd_key.append(u'06.查看配置')
-        self.json_cmd_dict[self.json_cmd_key[5]] = "{'fun':'check_config'}"
-        self.json_cmd_key.append(u'07.设置学号')
-        self.json_cmd_dict[self.json_cmd_key[6]] = "{'fun':'set_student_id','student_id':'1234'}"
-        self.json_cmd_key.append(u'08.设置信道')
-        self.json_cmd_dict[self.json_cmd_key[7]] = "{'fun': 'set_channel','tx_ch': '2','rx_ch': '6'}"
-        self.json_cmd_key.append(u'09.设置功率')
-        self.json_cmd_dict[self.json_cmd_key[8]] = "{'fun':'set_tx_power','tx_power':'5'}"
-        self.json_cmd_key.append(u'10.下载程序')
-        self.json_cmd_dict[self.json_cmd_key[9]] = "{'fun':'bootloader'}"
-        self.json_cmd_key.append(u'11.2.4g考勤')
-        self.json_cmd_dict[self.json_cmd_key[10]] = "{'fun':'24g_attendance','attendance_status': '1',\
-            'attendance_tx_ch': '81'}"
-        self.json_cmd_key.append(u'12.DTQ 自检')
-        self.json_cmd_dict[self.json_cmd_key[11]] = "{'fun':'dtq_self_inspection'}"
-        self.json_cmd_key.append(u'13.开启考勤')
-        self.json_cmd_dict[self.json_cmd_key[12]] = u"暂无功能"
-        self.json_cmd_key.append(u'14.停止考勤')
-        self.json_cmd_dict[self.json_cmd_key[13]] = u"暂无功能"
-
         self.resize(700, 600)
         self.setWindowTitle('DTQPutty V0.1.0')
         self.workSpace = QWorkspace()
@@ -260,15 +222,7 @@ class DTQPutty(QMainWindow):
         self.tree_script.setHeaderLabel(u'测试脚本')
         self.tree_script.setColumnWidth(0, 90)
         self.tree_script.setFixedWidth(150)
-        self.function_script = QTreeWidgetItem(self.tree_script)
-        self.function_script.setText(0, u"功能测试指令")
-        for item in self.json_cmd_key:
-            QTreeWidgetItem(self.function_script).setText(0,item)
-
-        self.power_script = QTreeWidgetItem(self.tree_script)
-        self.power_script.setText(0, u"功耗测试脚本")
-        child1 = QTreeWidgetItem(self.power_script)
-        child1.setText(0,u'设备信息')
+        self.add_script_fun1(u'./data/功能测试指令.inf',1)
 
         self.dock_script.setWidget(self.tree_script)
         self.addDockWidget(Qt.LeftDockWidgetArea,self.dock_script)
@@ -333,8 +287,10 @@ class DTQPutty(QMainWindow):
             self.com_window_dict[com_name].show()
 
     def tree_script_itemDoubleClicked(self,item, column):
+        print item
         script_name = unicode(item.text(0))
-
+        print script_name
+        print self.json_cmd_dict
         for item in self.com_dict:
             self.com_monitor_dict[item].input_count = self.com_monitor_dict[item].input_count + 1
             index  = u"<font color=lightgreen>S[%d]:</font>" % self.com_monitor_dict[item].input_count
@@ -384,26 +340,38 @@ class DTQPutty(QMainWindow):
         else:
             self.com_edit_dict["CONSOLE"].append(u"Error:打开串口出错！")
 
-    def add_script_fun(self):
-        temp_image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './', "txt files(*.inf)"))
-
-        f = open(temp_image_path,'rU')
+    def add_script_fun1(self,file_path,mode):
+        print file_path
+        f = open(file_path,'rU')
         cmds =f.readlines()
-        #print cmds
         f.close()
-        name = unicode(temp_image_path.split("/")[-1])
+        name = unicode(file_path.split("/")[-1])
         new_script = QTreeWidgetItem(self.tree_script)
         new_script.setText(0, name.split(".")[0] )
 
         for i in range(len(cmds)/2):
-            item = cmds[i*2]
+            item = cmds[i*2].strip('\n')
             item = unicode(item.decode('utf-8'))
-            if item[0:1] == "<":
+
+
+            if item[0:1] == u"<":
                 cmd_dsc = item[4:]
             else:
                cmd_dsc = item[0:]
             #print cmd_dsc
-            QTreeWidgetItem(new_script).setText(0, cmd_dsc.split(":")[0])
+            cmd = cmd_dsc.split(":")[0]
+
+            if mode == 1:
+                self.json_cmd_key.append(cmd )
+                # print "cmd = %s" % cmd
+                self.json_cmd_dict[cmd] = cmds[i*2+1].strip('\n')
+                # print "value = %s" % self.json_cmd_dict[cmd]
+            print " index = %02d cmds = %s str_cmd = %s" % (i,cmd,self.json_cmd_dict[cmd])
+            QTreeWidgetItem(new_script).setText(0, cmd)
+
+    def add_script_fun(self):
+        temp_image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './', "txt files(*.inf)"))
+        self.add_script_fun1(temp_image_path,0)
 
     def uart_update_download_image_info(self,ser_str,data):
         global down_load_image_flag

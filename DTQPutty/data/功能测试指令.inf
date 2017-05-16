@@ -1,0 +1,24 @@
+01.设备信息:可以查看设备号及软件版本和配置信息等
+{'fun':'get_device_info'}
+02.开启绑定:此时刷卡可以完成答题器与接收器绑定
+{'fun':'bind_start'}
+03.停止绑定:
+{'fun':'bind_stop'}
+<03>04.清白名单:
+{'fun':'clear_wl'}
+<10>05.发送题目:5道题目
+{'fun': 'answer_start','time': '2017-02-15:17:41:07:137','raise_hand': '1','attendance': '1','questions': [{'type': 's','id': '1','range': 'A-D'},{'type': 'm','id': '13','range': 'A-F'},{'type': 'j','id': '24','range': ''},{'type': 'd','id': '27','range': '1-5'},{'type': 'g','id': '36','range': ''}]}
+<05>06.查看配置:查看配置信息
+{'fun':'check_config'}
+<05>07.设置学号:
+{'fun':'set_student_id','student_id':'1234'}
+<05>08.设置信道:
+{'fun': 'set_channel','tx_ch': '2','rx_ch': '6'}
+<05>09.设置功率:
+{'fun':'set_tx_power','tx_power':'5'}
+<05>10.下载程序:
+{'fun':'bootloader'}
+<05>11.2.4g考勤:
+{'fun':'24g_attendance','attendance_status': '1','attendance_tx_ch': '81'}
+<05>12.DTQ 自检:
+{'fun':'dtq_self_inspection'}
