@@ -31,17 +31,28 @@ logging.basicConfig ( # 配置日志输出的方式及格式
 
 ISOTIMEFORMAT = '%Y-%m-%d %H:%M:%S'
 
+class CmdScript():
+    def __init__(self, name, encode):
+        self.name      = name
+        self.encode    = encode
+        self.cmds_list = []
+        self.cmds_dict = {}
+
+    def add_cmd(self,name,value):
+        self.cmds_list.append(name)
+        self.cmds_dict[name] = value
+
 class DTQPutty(QMainWindow):
     def __init__(self, parent=None):
         super(DTQPutty, self).__init__(parent)
-        self.process_bar = 0
-        self.com_monitor_dict = {}
-        self.com_dict         = {}
-        self.com_edit_dict    = {}
-        self.com_window_dict  = {}
-        self.mearge_flag      = 0
-        self.json_cmd_dict    = {}
-        self.json_cmd_key     = []
+        self.process_bar   = 0
+        self.monitor_dict  = {}
+        self.com_dict      = {}
+        self.com_edit_dict = {}
+        self.window_dict   = {}
+        self.mearge_flag   = 0
+        self.script_list   = {}
+        self.scripts_count = 0
 
         self.resize(700, 600)
         self.setWindowTitle('DTQPutty V0.1.0')
@@ -49,8 +60,8 @@ class DTQPutty(QMainWindow):
         self.setCentralWidget(self.workSpace)
 
         self.create_new_window("CONSOLE")
-        self.com_window_dict["CONSOLE"].show()
-        self.com_window_dict["CONSOLE"].showMaximized()
+        self.window_dict["CONSOLE"].show()
+        self.window_dict["CONSOLE"].showMaximized()
 
         self.dock_com = QDockWidget(u"当前连接",self)
         self.dock_com.setFeatures(QDockWidget.DockWidgetMovable)
@@ -78,6 +89,7 @@ class DTQPutty(QMainWindow):
         self.tree_script.setHeaderLabel(u'测试脚本')
         self.tree_script.setColumnWidth(0, 90)
         self.tree_script.setFixedWidth(150)
+
         self.add_script_fun1(u'./data/功能测试指令.inf',1)
 
         self.dock_script.setWidget(self.tree_script)
@@ -140,30 +152,31 @@ class DTQPutty(QMainWindow):
     def tree_com_itemDoubleClicked(self,item, column):
         com_name = unicode(item.text(0))
         if com_name[0:2] == 'CO':
-            self.com_window_dict[com_name].show()
+            self.window_dict[com_name].show()
 
     def tree_script_itemDoubleClicked(self,item, column):
         # print item
-        script_name = unicode(item.text(0))
-        # print script_name
-        # print self.json_cmd_dict
+        cmd_name = unicode(item.text(0))
+        print cmd_name
+
         for item in self.com_dict:
-            self.com_monitor_dict[item].input_count = self.com_monitor_dict[item].input_count + 1
-            index  = u"<font color=lightgreen>S[%d]:</font>" % self.com_monitor_dict[item].input_count
-            self.uart_update_text(item,index, self.json_cmd_dict[script_name])
-            self.com_dict[item].write(self.json_cmd_dict[script_name])
+            self.monitor_dict[item].input_count = self.monitor_dict[item].input_count + 1
+            index  = u"<font color=lightgreen>S[%d]:</font>" % self.monitor_dict[item].input_count
+
+            self.uart_update_text( item, index, self.script_list[0].cmds_dict[cmd_name])
+            self.com_dict[item].write(self.script_list[0].cmds_dict[cmd_name])
 
     def create_new_window(self,name):
         # 创建显示窗口
-        self.com_window_dict[name] = QMainWindow()
-        self.com_window_dict[name].setWindowTitle(name)
+        self.window_dict[name] = QMainWindow()
+        self.window_dict[name].setWindowTitle(name)
         self.com_edit_dict[name] = QTextEdit()
         self.com_edit_dict[name].setStyleSheet('QWidget {background-color:#111111}')
         self.com_edit_dict[name].setFont(QFont("Courier New", 10, False))
         self.com_edit_dict[name].setTextColor(QColor(200,200,200))
-        self.com_window_dict[name].setCentralWidget(self.com_edit_dict[name])
+        self.window_dict[name].setCentralWidget(self.com_edit_dict[name])
         self.com_edit_dict[name].append("Open %s OK!" % name)
-        self.workSpace.addWindow(self.com_window_dict[name])
+        self.workSpace.addWindow(self.window_dict[name])
 
     def open_new_session(self):
         com = COMSetting.get_port()
@@ -180,17 +193,17 @@ class DTQPutty(QMainWindow):
             self.create_new_window(com.portstr)
 
             # 创建监听线程
-            self.com_monitor_dict[com.portstr] = ComMonitor(com)
+            self.monitor_dict[com.portstr] = ComMonitor(com)
             self.com_dict[com.portstr]         = com
 
-            self.connect(self.com_monitor_dict[com.portstr],
+            self.connect(self.monitor_dict[com.portstr],
                          SIGNAL('protocol_message(QString, QString)'),
                          self.update_edit)
-            self.connect(self.com_monitor_dict[com.portstr],
+            self.connect(self.monitor_dict[com.portstr],
                          SIGNAL('download_image_info(QString, QString)'),
                          self.uart_update_download_image_info)
 
-            self.com_monitor_dict[com.portstr].start()
+            self.monitor_dict[com.portstr].start()
             self.setWindowTitle(com.portstr + '-DTQPutty V0.1.0')
             logging.info(u"启动串口监听线程!")
         else:
@@ -214,6 +227,8 @@ class DTQPutty(QMainWindow):
         new_script = QTreeWidgetItem(self.tree_script)
         new_script.setText(0, name.split(".")[0] + "(%s)" % encode_style[0:3])
 
+        self.script_list[self.scripts_count] = CmdScript(name, encode_style[0:3])
+
         cmds = lines[start_line+1:]
 
         for i in range(len(cmds)/2):
@@ -228,12 +243,11 @@ class DTQPutty(QMainWindow):
             cmd = cmd_dsc.split(":")[0]
 
             if mode == 1:
-                self.json_cmd_key.append(cmd )
                 # print "cmd = %s" % cmd
-                self.json_cmd_dict[cmd] = cmds[i*2+1].strip('\n')
-                # print "value = %s" % self.json_cmd_dict[cmd]
+                self.script_list[self.scripts_count].add_cmd(cmd,cmds[i*2+1].strip('\n'))
                 # print " index = %02d cmds = %s str_cmd = %s" % (i,cmd,self.json_cmd_dict[cmd])
             QTreeWidgetItem(new_script).setText(0, cmd)
+        self.scripts_count = self.scripts_count + 1
 
     def add_script_fun(self):
         temp_image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './', "txt files(*.inf)"))
@@ -246,7 +260,7 @@ class DTQPutty(QMainWindow):
             self.uart_update_text(ser_str,data)
 
         if data[7:8] == '2':
-            self.com_monitor_dict[com.portstr].com.write('1')
+            self.monitor_dict[com.portstr].com.write('1')
 
     def merge_display(self):
         if self.mearge_flag == 0:
@@ -255,7 +269,7 @@ class DTQPutty(QMainWindow):
             self.mearge_flag = 0
 
     def update_edit(self,ser_str,data):
-        index  = u"<font color=lightgreen>R[%d]:</font>" % self.com_monitor_dict[str(ser_str)].input_count
+        index  = u"<font color=lightgreen>R[%d]:</font>" % self.monitor_dict[str(ser_str)].input_count
         self.uart_update_text(str(ser_str), index, data)
 
     def uart_update_text(self,ser_str,index,data):
