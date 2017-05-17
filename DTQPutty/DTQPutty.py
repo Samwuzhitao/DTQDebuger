@@ -10,6 +10,7 @@ import time
 import os
 import sys
 import logging
+import ConfigParser
 from time import sleep
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -90,7 +91,16 @@ class DTQPutty(QMainWindow):
         self.tree_script.setColumnWidth(0, 90)
         self.tree_script.setFixedWidth(150)
 
-        self.add_script_fun1(u'./data/功能测试指令.inf')
+        # get uart Config
+        config = ConfigParser.ConfigParser()
+        path = os.path.abspath("./")
+        config.readfp(open(path + '\\data\\' + 'default_setting.inf', "rb"))
+        file_num = config.get('script', 'file_num')
+
+        for i in range(string.atoi(file_num)):
+            file_path = config.get('script', 'path'+'%d' % i)
+            print file_path
+            self.add_script_fun1(file_path.decode("utf-8"))
 
         self.dock_script.setWidget(self.tree_script)
         self.addDockWidget(Qt.LeftDockWidgetArea,self.dock_script)
