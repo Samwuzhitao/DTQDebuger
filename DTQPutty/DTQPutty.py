@@ -51,8 +51,9 @@ class CmdScript():
         time_out  = self.time_dict[self.cmds_list[self.cmd_index]]
         cmd_value = self.cmds_dict[self.cmds_list[self.cmd_index]]
         self.cmd_index = self.cmd_index + 1
-        print time_out,cmd_value
+        # print time_out,cmd_value
         if self.cmd_index == len(self.cmds_list):
+            self.cmd_index = 0
             return 0,""
         else:
             return time_out,cmd_value
@@ -177,8 +178,6 @@ class DTQPutty(QMainWindow):
         self.timer.timeout.connect(self.uart_auto_send_script)
 
     def uart_auto_send_script(self):
-        print self.cur_script.name
-        # self.timer.stop()
         timeout,cmd_value = self.cur_script.get_cmd()
         if timeout != 0:
             self.timer.start(timeout*1000)
@@ -187,6 +186,7 @@ class DTQPutty(QMainWindow):
                 self.monitor_dict[item].input_count = self.monitor_dict[item].input_count + 1
                 index = u"<font color=lightgreen>S[%d]:</font>" % self.monitor_dict[item].input_count
                 self.uart_update_text( item, index, cmd_value)
+                logging.debug(u'发送数据:%s',cmd_value)
 
                 if self.cur_script.encode == 'hex':
                     cmd_value = cmd_value.replace(' ','')
@@ -199,6 +199,7 @@ class DTQPutty(QMainWindow):
                 self.monitor_dict[item].input_count = self.monitor_dict[item].input_count + 1
                 index = u"<font color=lightgreen>S[%d]:</font>" % self.monitor_dict[item].input_count
                 self.uart_update_text( item, index, u'脚本已经执行完毕...')
+
 
     def tree_com_itemDoubleClicked(self,item, column):
         com_name = unicode(item.text(0))
@@ -227,6 +228,7 @@ class DTQPutty(QMainWindow):
                 encode      = self.script_list[index_top].encode
                 # print cmd_timeout,cmd_value
                 self.uart_update_text( item, index, cmd_value)
+                logging.debug(u'发送数据:%s',cmd_value)
                 if encode == 'hex':
                     cmd_value = cmd_value.replace(' ','')
                     cmd_value = cmd_value.decode("hex")
@@ -239,19 +241,20 @@ class DTQPutty(QMainWindow):
                 index  = u"<font color=lightgreen>S[%d]:</font>" % self.monitor_dict[item].input_count
                 self.uart_update_text( item, index, cmd_value)
                 self.cur_script = self.script_list[index_top]
+                self.cur_script.cmd_index = 0
                 self.timer.start(1000)
-                # self.uart_auto_send_script(self.script_list[index_top])
 
     def tree_script_itemDoubleClicked(self,item, column):
         # print item
         cmd_name = unicode(item.text(0))
-        print cmd_name
+        # print cmd_name
 
         for item in self.com_dict:
             self.monitor_dict[item].input_count = self.monitor_dict[item].input_count + 1
             index  = u"<font color=lightgreen>S[%d]:</font>" % self.monitor_dict[item].input_count
 
             self.uart_update_text( item, index, self.script_list[0].cmds_dict[cmd_name])
+            logging.debug(u'发送数据:%s',self.script_list[0].cmds_dict[cmd_name])
             self.com_dict[item].write(self.script_list[0].cmds_dict[cmd_name])
 
     def create_new_window(self,name):
@@ -362,8 +365,6 @@ class DTQPutty(QMainWindow):
         self.uart_update_text(str(ser_str), index, data)
 
     def uart_update_text(self,ser_str,index,data):
-        logging.debug(u"接收数据：%s",data)
-
         if self.mearge_flag == 0:
             ser = "CONSOLE"
         else:
