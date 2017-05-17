@@ -38,10 +38,24 @@ class CmdScript():
         self.encode    = encode
         self.cmds_list = []
         self.cmds_dict = {}
+        self.time_dict = {}
+        self.cmd_index = 0
+        self.run_times = 0
 
-    def add_cmd(self,name,value):
+    def add_cmd(self,name,value,timeout):
         self.cmds_list.append(name)
         self.cmds_dict[name] = value
+        self.time_dict[name] = timeout
+
+    def get_cmd(self):
+        time_out  = self.time_dict[self.cmds_list[self.cmd_index]]
+        cmd_value = self.cmds_dict[self.cmds_list[self.cmd_index]]
+        self.cmd_index = self.cmd_index + 1
+        print time_out,cmd_value
+        if self.cmd_index == len(self.cmds_list):
+            return 0,""
+        else:
+            return time_out,cmd_value
 
 class DTQPutty(QMainWindow):
     def __init__(self, parent=None):
@@ -54,6 +68,7 @@ class DTQPutty(QMainWindow):
         self.mearge_flag   = 0
         self.script_list   = {}
         self.scripts_count = 0
+        self.cur_script    = 0
 
         self.resize(700, 600)
         self.setWindowTitle('DTQPutty V0.1.0')
@@ -157,6 +172,33 @@ class DTQPutty(QMainWindow):
             self.tree_com_itemDoubleClicked)
         # 指令机脚本管理
         self.tree_script.itemDoubleClicked.connect(self.tree_script_doubleClicked)
+        # 自动发送定时器
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.uart_auto_send_script)
+
+    def uart_auto_send_script(self):
+        print self.cur_script.name
+        # self.timer.stop()
+        timeout,cmd_value = self.cur_script.get_cmd()
+        if timeout != 0:
+            self.timer.start(timeout*1000)
+
+            for item in self.com_dict:
+                self.monitor_dict[item].input_count = self.monitor_dict[item].input_count + 1
+                index = u"<font color=lightgreen>S[%d]:</font>" % self.monitor_dict[item].input_count
+                self.uart_update_text( item, index, cmd_value)
+
+                if self.cur_script.encode == 'hex':
+                    cmd_value = cmd_value.replace(' ','')
+                    cmd_value = cmd_value.decode("hex")
+                self.com_dict[item].write(cmd_value)
+        else:
+            self.timer.stop()
+
+            for item in self.com_dict:
+                self.monitor_dict[item].input_count = self.monitor_dict[item].input_count + 1
+                index = u"<font color=lightgreen>S[%d]:</font>" % self.monitor_dict[item].input_count
+                self.uart_update_text( item, index, u'脚本已经执行完毕...')
 
     def tree_com_itemDoubleClicked(self,item, column):
         com_name = unicode(item.text(0))
@@ -180,8 +222,14 @@ class DTQPutty(QMainWindow):
             for item in self.com_dict:
                 self.monitor_dict[item].input_count = self.monitor_dict[item].input_count + 1
                 index  = u"<font color=lightgreen>S[%d]:</font>" % self.monitor_dict[item].input_count
-                cmd_value = self.script_list[index_top].cmds_dict[cmd_name]
+                cmd_value   = self.script_list[index_top].cmds_dict[cmd_name]
+                cmd_timeout = self.script_list[index_top].time_dict[cmd_name]
+                encode      = self.script_list[index_top].encode
+                # print cmd_timeout,cmd_value
                 self.uart_update_text( item, index, cmd_value)
+                if encode == 'hex':
+                    cmd_value = cmd_value.replace(' ','')
+                    cmd_value = cmd_value.decode("hex")
                 self.com_dict[item].write(cmd_value)
 
         if index_row == -1:
@@ -190,6 +238,9 @@ class DTQPutty(QMainWindow):
                 self.monitor_dict[item].input_count = self.monitor_dict[item].input_count + 1
                 index  = u"<font color=lightgreen>S[%d]:</font>" % self.monitor_dict[item].input_count
                 self.uart_update_text( item, index, cmd_value)
+                self.cur_script = self.script_list[index_top]
+                self.timer.start(1000)
+                # self.uart_auto_send_script(self.script_list[index_top])
 
     def tree_script_itemDoubleClicked(self,item, column):
         # print item
@@ -265,6 +316,7 @@ class DTQPutty(QMainWindow):
         new_script.setText(0, name.split(".")[0] + "(%s)" % encode_style[0:3])
 
         self.script_list[self.scripts_count] = CmdScript(name, encode_style[0:3])
+        self.script_list[self.scripts_count].encode = encode_style[0:3]
 
         cmds = lines[start_line+1:]
 
@@ -274,12 +326,14 @@ class DTQPutty(QMainWindow):
 
             if item[0:1] == u"<":
                 cmd_dsc = item[4:]
+                timeout = string.atoi(item[1:3], 10)
             else:
                cmd_dsc = item[0:]
+               timeout = 1
             #print cmd_dsc
             cmd = cmd_dsc.split(":")[0]
 
-            self.script_list[self.scripts_count].add_cmd(cmd,cmds[i*2+1].strip('\n'))
+            self.script_list[self.scripts_count].add_cmd(cmd,cmds[i*2+1].strip('\n'),timeout)
             # print " index = %02d cmds = %s str_cmd = %s" % (i,cmd,self.json_cmd_dict[cmd])
             QTreeWidgetItem(new_script).setText(0, cmd)
         self.scripts_count = self.scripts_count + 1
