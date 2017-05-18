@@ -22,9 +22,7 @@ class UartListen(QThread):
         self.working=True
         self.num=0
         self.json_revice = JsonDecode()
-        self.ReviceFunSets           = {
-            0:self.uart_down_load_image_0
-        }
+        self.ReviceFunSets = { 0:self.uart_down_load_image_0 }
 
     def __del__(self):
         self.working=False
@@ -62,19 +60,21 @@ class QtqBurner(QWidget):
         self.ports_dict = {}
         self.dtq_image_path = ''
         self.new_image_path = ''
-        self.dtq_id      = ''
+        self.dtq_id         = ''
 
         self.setWindowTitle(u"答题器烧录工具v0.1.0")
 
         self.com_combo=QComboBox(self)
         self.com_combo.setFixedSize(75, 20)
         self.uart_scan()
-        self.start_button= QPushButton(u"打开接收器")
-        self.save_button = QPushButton(u"手动转换文件")
+        self.start_button = QPushButton(u"打开接收器")
+        self.save_button  = QPushButton(u"手动转换文件")
+        self.clear_button = QPushButton(u"清空LOG信息")
         c_hbox = QHBoxLayout()
         c_hbox.addWidget(self.com_combo)
         c_hbox.addWidget(self.start_button)
         c_hbox.addWidget(self.save_button)
+        c_hbox.addWidget(self.clear_button)
 
         self.dtq_id_label=QLabel(u"设备ID:")
         self.dtq_id_lineedit = QLineEdit(u"11223344")
@@ -119,6 +119,7 @@ class QtqBurner(QWidget):
 
         self.boot_button.clicked.connect(self.choose_image_file)
         self.burn_button.clicked.connect(self.download_image)
+        self.clear_button.clicked.connect(self.clear_text)
 
         self.start_button.clicked.connect(self.band_start)
         self.save_button.clicked.connect(self.exchange_file)
@@ -134,7 +135,9 @@ class QtqBurner(QWidget):
     def update_time(self):
         self.time_lineedit.setText(time.strftime(
             '%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
-        #self.exchange_file()
+
+    def clear_text(self):
+        self.browser.clear()
 
     def change_uart(self):
         global input_count
