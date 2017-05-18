@@ -16,18 +16,18 @@ from JsonDecode import *
 ser              = 0
 input_count      = 0
 
-class UartListen(QThread): 
-    def __init__(self,parent=None): 
-        super(UartListen,self).__init__(parent) 
-        self.working=True 
-        self.num=0 
+class UartListen(QThread):
+    def __init__(self,parent=None):
+        super(UartListen,self).__init__(parent)
+        self.working=True
+        self.num=0
         self.json_revice = JsonDecode()
         self.ReviceFunSets           = {
             0:self.uart_down_load_image_0
         }
 
-    def __del__(self): 
-        self.working=False 
+    def __del__(self):
+        self.working=False
         self.wait()
 
     def uart_down_load_image_0(self,read_char):
@@ -43,10 +43,10 @@ class UartListen(QThread):
 
         return recv_str
 
-    def run(self): 
+    def run(self):
         global ser
 
-        while self.working==True: 
+        while self.working==True:
             if ser.isOpen() == True:
                 read_char = ser.read(1)
                 recv_str = self.ReviceFunSets[0]( read_char )
@@ -66,22 +66,24 @@ class QtqBurner(QWidget):
 
         self.setWindowTitle(u"答题器HEX文件转换工具v0.1.0")
 
-        self.com_combo=QComboBox(self) 
+        self.com_combo=QComboBox(self)
         self.com_combo.setFixedSize(75, 20)
         self.uart_scan()
         self.start_button= QPushButton(u"打开接收器")
         self.dtq_choose_image_button = QPushButton(u"答题器固件")
         self.save_button = QPushButton(u"转换文件")
+        self.burn1_button = QPushButton(u"烧录文件")
         c_hbox = QHBoxLayout()
         c_hbox.addWidget(self.com_combo)
         c_hbox.addWidget(self.start_button)
         c_hbox.addWidget(self.dtq_choose_image_button)
         c_hbox.addWidget(self.save_button)
+        c_hbox.addWidget(self.burn1_button)
 
-        self.dtq_id_label=QLabel(u"设备ID:") 
+        self.dtq_id_label=QLabel(u"设备ID:")
         self.dtq_id_lineedit = QLineEdit(u"11223344")
-        self.time_label=QLabel(u"系统时间:") 
-        self.time_lineedit = QLineEdit( time.strftime( 
+        self.time_label=QLabel(u"系统时间:")
+        self.time_lineedit = QLineEdit( time.strftime(
             '%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
 
         e_hbox = QHBoxLayout()
@@ -98,7 +100,7 @@ class QtqBurner(QWidget):
 
         self.boot_button= QPushButton(u"BOOLLOADER")
         self.boot_browser = QLineEdit()
-        self.boot_label=QLabel(u"文件:") 
+        self.boot_label=QLabel(u"文件:")
         b_hbox = QHBoxLayout()
         b_hbox.addWidget(self.boot_label)
         b_hbox.addWidget(self.boot_browser)
@@ -124,7 +126,7 @@ class QtqBurner(QWidget):
         box = QVBoxLayout()
         box.addLayout(c_hbox)
         box.addLayout(e_hbox)
-        
+
         box.addLayout(vbox)
         self.setLayout(box)
         self.resize( 540, 500 )
@@ -133,12 +135,13 @@ class QtqBurner(QWidget):
         self.boot_button.clicked.connect(self.choose_image_file)
         self.image_button.clicked.connect(self.choose_image_file)
         self.burn_button.clicked.connect(self.merge_file)
+        self.burn1_button.clicked.connect(self.download_image)
 
         self.start_button.clicked.connect(self.band_start)
         self.save_button.clicked.connect(self.exchange_file)
         self.uart_listen_thread=UartListen()
         self.connect(self.uart_listen_thread,SIGNAL('output(QString)'),
-            self.uart_update_text) 
+            self.uart_update_text)
         self.com_combo.currentIndexChanged.connect(self.change_uart)
 
         self.timer = QTimer()
@@ -146,7 +149,7 @@ class QtqBurner(QWidget):
         self.timer.start(1000)
 
     def update_time(self):
-        self.time_lineedit.setText(time.strftime( 
+        self.time_lineedit.setText(time.strftime(
             '%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
         #self.exchange_file()
 
@@ -162,17 +165,18 @@ class QtqBurner(QWidget):
 
     def uart_update_text(self,data):
         self.browser.append(data)
-        print data[34:41]
-        if data[34:41] == "card_id":
+        print data
+        print data[34 + 6:41 + 6]
+        if data[34 + 6:41 + 6] == "card_id":
             #id_data = "%08X" % string.atoi(data[44:54])
-            id_data = "%08X" % string.atoi(str(data[44:54]))
+            id_data = "%08X" % string.atoi(str(data[44+6:54+6]))
             #string.atoi(str(self.dtq_id_lineedit.text()))
             self.dtq_id_lineedit.setText(id_data)
         self.exchange_file()
 
     def uart_scan(self):
         for i in range(256):
-            
+
             try:
                 s = serial.Serial(i)
                 self.com_combo.addItem(s.portstr)
@@ -189,7 +193,7 @@ class QtqBurner(QWidget):
 
         try:
             ser = serial.Serial( self.ports_dict[serial_port], 1152000)
-        except serial.SerialException: 
+        except serial.SerialException:
             pass
 
         if input_count == 0:
@@ -207,14 +211,14 @@ class QtqBurner(QWidget):
     def exchange_file(self):
         #print "****"
         if self.dtq_image_path != '':
-            f = open(self.dtq_image_path)  
+            f = open(self.dtq_image_path)
             li = f.readlines()
-            f.close() 
+            f.close()
             #print type(li)
             id_data = str(self.dtq_id_lineedit.text())
             #print id_data
             time_data = time.strftime( '%Y%m%d%H%M%S',time.localtime(time.time()))
-            insert_data = "0BFC0000" + id_data + time_data 
+            insert_data = "0BFC0000" + id_data + time_data
             insert_data_hex = insert_data.decode("hex")
 
             check_sum = 0
@@ -224,11 +228,11 @@ class QtqBurner(QWidget):
             insert_data = ':' + insert_data + "%02X\n" % (0x100-check_sum)
             li.insert(1, insert_data)
             #print li
-            file_path = self.dtq_image_path[0:len(self.dtq_image_path)-4] 
+            file_path = self.dtq_image_path[0:len(self.dtq_image_path)-4]
             new_file_path = file_path + "_NEW.hex"
-            new_file = open(new_file_path ,'w')  
+            new_file = open(new_file_path ,'w')
             for i in li:
-                new_file.write(i) 
+                new_file.write(i)
             new_file.close()
 
             new_file = open(new_file_path)
@@ -287,16 +291,16 @@ class QtqBurner(QWidget):
             image_li = f.readlines()
             f.close()
             #print li
-            file_path = self.jsq_image_path[0:len(self.jsq_image_path)-4] 
+            file_path = self.jsq_image_path[0:len(self.jsq_image_path)-4]
             new_file_path = file_path + "_BOOTLOADER.hex"
 
-            new_file = open(new_file_path ,'w')  
+            new_file = open(new_file_path ,'w')
 
             for i in range(0,len(boot_li)-1):
-                new_file.write(boot_li[i]) 
+                new_file.write(boot_li[i])
 
             for i in image_li:
-                new_file.write(i) 
+                new_file.write(i)
 
             new_file.close()
 
@@ -305,6 +309,22 @@ class QtqBurner(QWidget):
             self.browser.setText(data)
             new_file.close()
 
+    def download_image(self):
+        path = os.path.abspath("./")
+        print path
+
+        exe_file_path = path + '\\BIN\\' + 'nrfjprog.exe'
+        bin_file_path = path + '\\data\\' + 'DTQ_HT41_ZKXL0101_NEW.hex'
+
+        cmd1 = exe_file_path + ' -e --program ' + bin_file_path
+        print cmd1
+        cmd2 = exe_file_path + ' --rbp CR0 -p'
+        print cmd2
+
+        result = os.system( cmd1 )
+        print result
+        result = os.system( cmd2 )
+        print result
 
 if __name__=='__main__':
     app = QApplication(sys.argv)
