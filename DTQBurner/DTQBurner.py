@@ -61,24 +61,20 @@ class QtqBurner(QWidget):
         input_count = 0
         self.ports_dict = {}
         self.dtq_image_path = ''
-        self.jsq_boot_path  = ''
-        self.jsq_image_path = ''
+        self.new_image_path = ''
+        self.dtq_id      = ''
 
-        self.setWindowTitle(u"答题器HEX文件转换工具v0.1.0")
+        self.setWindowTitle(u"答题器烧录工具v0.1.0")
 
         self.com_combo=QComboBox(self)
         self.com_combo.setFixedSize(75, 20)
         self.uart_scan()
         self.start_button= QPushButton(u"打开接收器")
-        self.dtq_choose_image_button = QPushButton(u"答题器固件")
-        self.save_button = QPushButton(u"转换文件")
-        self.burn1_button = QPushButton(u"烧录文件")
+        self.save_button = QPushButton(u"手动转换文件")
         c_hbox = QHBoxLayout()
         c_hbox.addWidget(self.com_combo)
         c_hbox.addWidget(self.start_button)
-        c_hbox.addWidget(self.dtq_choose_image_button)
         c_hbox.addWidget(self.save_button)
-        c_hbox.addWidget(self.burn1_button)
 
         self.dtq_id_label=QLabel(u"设备ID:")
         self.dtq_id_lineedit = QLineEdit(u"11223344")
@@ -92,35 +88,25 @@ class QtqBurner(QWidget):
         e_hbox.addWidget(self.time_label)
         e_hbox.addWidget(self.time_lineedit)
 
-        self.merge_label = QLabel(u"接收器2个HEX文件合并")
-        self.merge_label.setFont(QFont("Courier New", 14, QFont.Bold))
-        self.merge_label.setAlignment(Qt.AlignCenter)
-        r_hbox = QHBoxLayout()
-        r_hbox.addWidget(self.merge_label)
-
-        self.boot_button= QPushButton(u"BOOLLOADER")
+        self.boot_button= QPushButton(u"答题器固件")
         self.boot_browser = QLineEdit()
         self.boot_label=QLabel(u"文件:")
+
         b_hbox = QHBoxLayout()
         b_hbox.addWidget(self.boot_label)
         b_hbox.addWidget(self.boot_browser)
         b_hbox.addWidget(self.boot_button)
 
-        self.image_button = QPushButton(u"接收器固件")
-        self.image_browser = QLineEdit()
-        self.image_label=QLabel(u"文件:")
-        i_hbox = QHBoxLayout()
-        i_hbox.addWidget(self.image_label)
-        i_hbox.addWidget(self.image_browser)
-        i_hbox.addWidget(self.image_button)
-
         self.browser = QTextBrowser()
-        self.burn_button = QPushButton(u"合并文件")
+        self.browser.setFont(QFont("Courier New", 14, QFont.Bold))
+        self.burn_button = QPushButton(u"烧录文件")
+        self.burn_button.setFont(QFont("Courier New", 14, QFont.Bold))
+        self.burn_button.setFixedHeight(40)
         vbox = QVBoxLayout()
-        vbox.addWidget(self.browser)
-        vbox.addLayout(r_hbox)
+
+        # vbox.addLayout(r_hbox)
         vbox.addLayout(b_hbox)
-        vbox.addLayout(i_hbox)
+        vbox.addWidget(self.browser)
         vbox.addWidget(self.burn_button)
 
         box = QVBoxLayout()
@@ -129,13 +115,10 @@ class QtqBurner(QWidget):
 
         box.addLayout(vbox)
         self.setLayout(box)
-        self.resize( 540, 500 )
+        self.resize( 500, 500 )
 
-        self.dtq_choose_image_button.clicked.connect(self.choose_image_file)
         self.boot_button.clicked.connect(self.choose_image_file)
-        self.image_button.clicked.connect(self.choose_image_file)
-        self.burn_button.clicked.connect(self.merge_file)
-        self.burn1_button.clicked.connect(self.download_image)
+        self.burn_button.clicked.connect(self.download_image)
 
         self.start_button.clicked.connect(self.band_start)
         self.save_button.clicked.connect(self.exchange_file)
@@ -164,15 +147,18 @@ class QtqBurner(QWidget):
             self.open_uart()
 
     def uart_update_text(self,data):
-        self.browser.append(data)
-        print data
-        print data[34 + 6:41 + 6]
+
+        # print data
+        # print data[34 + 6:41 + 6]
         if data[34 + 6:41 + 6] == "card_id":
             #id_data = "%08X" % string.atoi(data[44:54])
-            id_data = "%08X" % string.atoi(str(data[44+6:54+6]))
+            # id_data = "%010d" % string.atoi(str(data[44+6:54+6]))
+            self.dtq_id = data[44+6:54+6]
             #string.atoi(str(self.dtq_id_lineedit.text()))
-            self.dtq_id_lineedit.setText(id_data)
-        self.exchange_file()
+            self.dtq_id_lineedit.setText(self.dtq_id)
+            self.exchange_file()
+        else:
+            self.browser.append(data)
 
     def uart_scan(self):
         for i in range(256):
@@ -210,12 +196,13 @@ class QtqBurner(QWidget):
 
     def exchange_file(self):
         #print "****"
-        if self.dtq_image_path != '':
+        if self.dtq_image_path :
             f = open(self.dtq_image_path)
             li = f.readlines()
             f.close()
             #print type(li)
             id_data = str(self.dtq_id_lineedit.text())
+            id_data = "%08X" % string.atoi(id_data)
             #print id_data
             time_data = time.strftime( '%Y%m%d%H%M%S',time.localtime(time.time()))
             insert_data = "0BFC0000" + id_data + time_data
@@ -229,16 +216,16 @@ class QtqBurner(QWidget):
             li.insert(1, insert_data)
             #print li
             file_path = self.dtq_image_path[0:len(self.dtq_image_path)-4]
-            new_file_path = file_path + "_NEW.hex"
-            new_file = open(new_file_path ,'w')
+            self.new_image_path = file_path + "_NEW.hex"
+            new_file = open(self.new_image_path ,'w')
             for i in li:
                 new_file.write(i)
             new_file.close()
 
-            new_file = open(new_file_path)
-            data = new_file.read()
-            self.browser.setText(data)
-            new_file.close()
+            self.browser.append(u"<font color=green>UID:[%s] HEX文件转换成功！" %
+                str(self.dtq_id_lineedit.text()) )
+        else:
+            self.browser.append(u"<font color=red>错误：无原始文件！")
 
     def band_start(self):
         global ser
@@ -264,67 +251,28 @@ class QtqBurner(QWidget):
 
         if button_str == u"答题器固件":
             self.dtq_image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './'))
-            if len(self.dtq_image_path) > 0:
-                f = open(self.dtq_image_path,"rb")
-                data = f.read()
-                self.browser.setText(data)
-                f.close()
-        if button_str == u"BOOLLOADER":
-            self.jsq_boot_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './'))
-            if len(self.jsq_boot_path) > 0:
-                self.boot_browser.setText(self.jsq_boot_path)
-
-        if button_str == u"接收器固件":
-            self.jsq_image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './'))
-            if len(self.jsq_image_path) > 0:
-                self.image_browser.setText(self.jsq_image_path)
-
-    def merge_file(self):
-        #print "****"
-        if self.jsq_boot_path != '':
-            f = open(self.jsq_boot_path)
-            boot_li = f.readlines()
-            f.close()
-
-        if self.jsq_image_path != '':
-            f = open(self.jsq_image_path)
-            image_li = f.readlines()
-            f.close()
-            #print li
-            file_path = self.jsq_image_path[0:len(self.jsq_image_path)-4]
-            new_file_path = file_path + "_BOOTLOADER.hex"
-
-            new_file = open(new_file_path ,'w')
-
-            for i in range(0,len(boot_li)-1):
-                new_file.write(boot_li[i])
-
-            for i in image_li:
-                new_file.write(i)
-
-            new_file.close()
-
-            new_file = open(new_file_path)
-            data = new_file.read()
-            self.browser.setText(data)
-            new_file.close()
+            if self.dtq_image_path > 0:
+                self.boot_browser.setText(self.dtq_image_path)
 
     def download_image(self):
         path = os.path.abspath("./")
-        print path
-
         exe_file_path = path + '\\BIN\\' + 'nrfjprog.exe'
-        bin_file_path = path + '\\data\\' + 'DTQ_HT41_ZKXL0101_NEW.hex'
-
-        cmd1 = exe_file_path + ' -e --program ' + bin_file_path
-        print cmd1
+        cmd1 = exe_file_path + ' -e --program ' + self.new_image_path
+        # print cmd1
         cmd2 = exe_file_path + ' --rbp CR0 -p'
-        print cmd2
-
+        # print cmd2
+        id_str = str(self.dtq_id_lineedit.text())
         result = os.system( cmd1 )
-        print result
+        if result != 0:
+            self.browser.append(u"<font color=red>UID:[%s] 烧写失败！" % id_str )
+            return
+
         result = os.system( cmd2 )
-        print result
+        if result != 0:
+            self.browser.append(u"<font color=red>UID:[%s] 烧写失败！" % id_str )
+            return
+
+        self.browser.append(u"<font color=green>UID:[%s] 烧写成功！" % id_str )
 
 if __name__=='__main__':
     app = QApplication(sys.argv)
