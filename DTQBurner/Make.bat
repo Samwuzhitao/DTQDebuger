@@ -1,4 +1,4 @@
-pyinstaller -F -w -i ./data./dtq.ico DTQBurner.py
+pyinstaller -F -w -i ./image/dtq.ico DTQBurner.py
 del DTQBurner.spec
 del *.pyc
 rd /s /q build

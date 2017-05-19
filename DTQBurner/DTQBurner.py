@@ -259,7 +259,7 @@ class QtqBurner(QWidget):
 
     def download_image(self):
         path = os.path.abspath("./")
-        exe_file_path = path + '\\BIN\\' + 'nrfjprog.exe'
+        exe_file_path = path + '\\system\\' + 'nrfjprog.exe'
         cmd1 = exe_file_path + ' -e --program ' + self.new_image_path
         # print cmd1
         cmd2 = exe_file_path + ' --rbp CR0 -p'
