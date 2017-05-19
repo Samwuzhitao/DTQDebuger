@@ -204,11 +204,11 @@ class QtqBurner(QWidget):
             li = f.readlines()
             f.close()
             #print type(li)
-            id_data = str(self.dtq_id_lineedit.text())
-            id_data = "%08X" % string.atoi(id_data)
+            # id_data = str(self.dtq_id_lineedit.text())
+            # id_data = "%08X" % string.atoi(id_data)
             #print id_data
-            time_data = time.strftime( '%Y%m%d%H%M%S',time.localtime(time.time()))
-            insert_data = "0BFC0000" + id_data + time_data
+            time_data = time.strftime( '%Y%m%d',time.localtime(time.time()))
+            insert_data = "04FC0000" + time_data
             insert_data_hex = insert_data.decode("hex")
 
             check_sum = 0
