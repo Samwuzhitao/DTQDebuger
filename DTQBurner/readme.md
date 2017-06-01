@@ -53,5 +53,5 @@
 * **描述** :
 > 1. 修改DTQBurner，添加有源卡烧录的GUI界面
 > 2. 修改DTQBurner，修改串口搜索机制，实现自动更新
-> 2. 修改DTQBurner，增加LOG信息文件记录
-
+> 3. 修改DTQBurner，增加LOG信息文件记录
+> 4. 增加JSON模块，将字符位置匹配的查改，改为字典Item的匹配，完成YYK烧录信息的显示
