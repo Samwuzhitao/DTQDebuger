@@ -9,12 +9,23 @@ import string
 import time
 import os
 import sys
+import logging
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
 from JsonDecode import *
 
-ser              = 0
-input_count      = 0
+ser           = 0
+input_count   = 0
+LOGTIMEFORMAT = '%Y%m%d'
+log_time      = time.strftime( LOGTIMEFORMAT,time.localtime(time.time()))
+log_name      = "log-%s.txt" % log_time 
+
+logging.basicConfig ( # 配置日志输出的方式及格式
+    level = logging.DEBUG,
+    filename = log_name,
+    filemode = 'w',
+    format = u'【%(asctime)s】 %(levelname)s %(message)s',
+)
 
 class UartListen(QThread):
     def __init__(self,parent=None):
@@ -61,24 +72,38 @@ class QtqBurner(QWidget):
         self.dtq_image_path = ''
         self.new_image_path = ''
         self.dtq_id         = ''
-
-        self.setWindowTitle(u"答题器烧录工具v0.1.0")
+        self.pro_dict = {
+        u'我司':0,
+        u'江西移动':1,
+        u'重庆移动':2,
+        u'内蒙移动':3,
+        u'广西移动(初稿)':4,
+        u'广西移动(定稿)':5,
+        u'贵州移动':6,
+        u'甘肃移动':7,
+        u'山西移动_天波':8,
+        u'山西移动_鑫诺':9,
+        u'山西移动_统一协议':10,
+        u'安徽移动':11,
+        u'四川移动':12
+        }
+        self.setWindowTitle(u"烧录工具v0.1.1")
 
         self.com_combo=QComboBox(self)
         self.com_combo.setFixedSize(75, 20)
-        self.uart_scan()
+        self.uart_scan(self.ports_dict)
         self.start_button = QPushButton(u"打开接收器")
-        self.save_button  = QPushButton(u"手动转换文件")
         self.clear_button = QPushButton(u"清空LOG信息")
         c_hbox = QHBoxLayout()
         c_hbox.addWidget(self.com_combo)
         c_hbox.addWidget(self.start_button)
-        c_hbox.addWidget(self.save_button)
+        
         c_hbox.addWidget(self.clear_button)
 
         self.dtq_id_label=QLabel(u"设备ID:")
         self.dtq_id_lineedit = QLineEdit(u"11223344")
         self.time_label=QLabel(u"系统时间:")
+       
         self.time_lineedit = QLineEdit( time.strftime(
             '%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
 
@@ -88,24 +113,59 @@ class QtqBurner(QWidget):
         e_hbox.addWidget(self.time_label)
         e_hbox.addWidget(self.time_lineedit)
 
-        self.boot_button= QPushButton(u"答题器固件")
+        self.dtq_tabwidget = QTabWidget()
+        self.dtq_tabwidget.setFixedHeight(65)
+       
+        self.dtq_wiget    = QWidget()
+        self.boot_button  = QPushButton(u"答题器固件")
         self.boot_browser = QLineEdit()
         self.boot_label=QLabel(u"文件:")
+        self.save_button  = QPushButton(u"手动转换文件")
+        dtq_layout = QHBoxLayout()
+        dtq_layout.addWidget(self.boot_label)
+        dtq_layout.addWidget(self.boot_browser)
+        dtq_layout.addWidget(self.boot_button)
+        dtq_layout.addWidget(self.save_button)
 
-        b_hbox = QHBoxLayout()
-        b_hbox.addWidget(self.boot_label)
-        b_hbox.addWidget(self.boot_browser)
-        b_hbox.addWidget(self.boot_button)
+        self.yyk_wiget     = QWidget()
+        self.pro_combo= QComboBox(self)
+        self.pro_combo.addItems([
+            u'我司',
+            u'江西移动',
+            u'重庆移动',
+            u'内蒙移动',
+            u'广西移动(初稿)',
+            u'广西移动(定稿)',
+            u'贵州移动',
+            u'甘肃移动',
+            u'山西移动_天波',
+            u'山西移动_鑫诺',
+            u'山西移动_统一协议',
+            u'安徽移动',
+            u'四川移动'])
+        self.pro_label=QLabel(u"选择协议:")
+        self.pro_label.setFixedSize(60, 20)
+        self.save_button1  = QPushButton(u"生效协议")
+        yyk_layout = QHBoxLayout()
+        yyk_layout.addWidget(self.pro_label)
+        yyk_layout.addWidget(self.pro_combo)
+
+        yyk_layout.addWidget(self.save_button1)
+
+        self.dtq_wiget.setLayout(dtq_layout)
+        self.yyk_wiget.setLayout(yyk_layout)
+
+        self.dtq_tabwidget.addTab(self.dtq_wiget, "&DTQ")
+        self.dtq_tabwidget.addTab(self.yyk_wiget, "&YYK")
 
         self.browser = QTextBrowser()
         self.browser.setFont(QFont("Courier New", 14, QFont.Bold))
-        self.burn_button = QPushButton(u"烧录文件")
+        self.burn_button = QPushButton(u"开始烧录")
         self.burn_button.setFont(QFont("Courier New", 14, QFont.Bold))
         self.burn_button.setFixedHeight(40)
         vbox = QVBoxLayout()
 
-        # vbox.addLayout(r_hbox)
-        vbox.addLayout(b_hbox)
+        vbox.addWidget(self.dtq_tabwidget)
         vbox.addWidget(self.browser)
         vbox.addWidget(self.burn_button)
 
@@ -142,12 +202,10 @@ class QtqBurner(QWidget):
     def change_uart(self):
         global input_count
         global ser
-
+        self.uart_scan(self.ports_dict)
         if ser != 0:
             input_count = 0
             ser.close()
-        if input_count == 0:
-            self.open_uart()
 
     def uart_update_text(self,data):
 
@@ -163,13 +221,14 @@ class QtqBurner(QWidget):
         else:
             self.browser.append(data)
 
-    def uart_scan(self):
+    def uart_scan(self,dict):
         for i in range(256):
 
             try:
                 s = serial.Serial(i)
-                self.com_combo.addItem(s.portstr)
-                self.ports_dict[s.portstr] = i
+                if dict.has_key(s.portstr) == False:
+                    self.com_combo.addItem(s.portstr)
+                    self.ports_dict[s.portstr] = i
                 s.close()
             except serial.SerialException:
                 pass
@@ -268,14 +327,17 @@ class QtqBurner(QWidget):
         result = os.system( cmd1 )
         if result != 0:
             self.browser.append(u"<font color=red>UID:[%s] 烧写失败！" % id_str )
+            logging.debug(u"UID:[%s] 烧写失败！" % id_str )
             return
 
         result = os.system( cmd2 )
         if result != 0:
             self.browser.append(u"<font color=red>UID:[%s] 烧写失败！" % id_str )
+            logging.debug(u"UID:[%s] 烧写失败！" % id_str )
             return
 
         self.browser.append(u"<font color=green>UID:[%s] 烧写成功！" % id_str )
+        logging.debug(u"UID:[%s] 烧写成功！" % id_str )
 
 if __name__=='__main__':
     app = QApplication(sys.argv)
