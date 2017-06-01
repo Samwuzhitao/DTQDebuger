@@ -17,7 +17,7 @@ from JsonDecode   import *
 
 ser           = 0
 input_count   = 0
-LOGTIMEFORMAT = '%Y%m%d'
+LOGTIMEFORMAT = '%Y%m%d%H'
 log_time      = time.strftime( LOGTIMEFORMAT,time.localtime(time.time()))
 log_name      = "log-%s.txt" % log_time 
 
@@ -197,9 +197,12 @@ class QtqBurner(QWidget):
         global ser
 
         pro_name = unicode(self.pro_combo.currentText())
+        ISOTIMEFORMAT = '%Y-%m-%d %H:%M:%S'
+        now = time.strftime( ISOTIMEFORMAT,time.localtime(time.time()))
 
         if ser.isOpen() == True:
-            cmd = '{"fun": "si24r2e_auto_burn","setting": "1","pro_index": "%d"}'  %  self.pro_dict[pro_name]
+            cmd = '{"fun": "si24r2e_auto_burn","setting": "1","time": "%s","pro_index": "%d"}' \
+                %  ( now, self.pro_dict[pro_name])
             ser.write(cmd)
             input_count = input_count + 1
             data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
@@ -226,16 +229,15 @@ class QtqBurner(QWidget):
             json_str = data[6:]
             # print json_str
             json_dict = json.loads(str(json_str))
-            print json_dict
+
         if json_dict.has_key(u"fun") == True:
             fun = json_dict[u"fun"]
             if fun == u"update_card_info":
                 self.dtq_id = json_dict[u"card_id"]
                 self.dtq_id_lineedit.setText(self.dtq_id)
                 self.exchange_file()
+                return
 
-        if json_dict.has_key(u"fun") == True:
-            fun = json_dict[u"fun"]
             if fun == u"card_setting":
                 if json_dict.has_key(u"result") == True:
                     result = json_dict[u"result"]
@@ -251,6 +253,7 @@ class QtqBurner(QWidget):
                     if result == u"-2":
                         self.browser.append(u"<font color=red>%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id))
                         logging.debug(u"%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id))
+                return
 
             if fun == u"rssi_check":
                 if json_dict.has_key(u"result") == True:
@@ -263,6 +266,7 @@ class QtqBurner(QWidget):
                     else:
                         self.browser.append(u"<font color=red>%s@UID:[%s] RSSI校验失败！" % (pro_name,self.dtq_id))
                         logging.debug(u"%s@UID:[%s] RSSI校验失败！" % (pro_name,self.dtq_id))
+                return
 
             if fun == u"si24r2e_auto_burn":
                 if json_dict.has_key(u"result") == True:
@@ -274,6 +278,7 @@ class QtqBurner(QWidget):
                     else:
                         self.browser.append(u"<font color=red>%s@设置协议:[%s] 失败!" % pro_name )
                         logging.debug(u"设置协议:[%s] 失败!" % pro_name )
+                return
                     
             if fun == u"bind_start":
                 if json_dict.has_key(u"result") == True:
@@ -284,6 +289,7 @@ class QtqBurner(QWidget):
                     else:
                         self.browser.append(u"<font color=red>开启失败!" )
                         logging.debug(u"开启失败!" )
+                return
         else:
             self.browser.append(data)
 
