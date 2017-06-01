@@ -17,15 +17,16 @@ from JsonDecode   import *
 
 ser           = 0
 input_count   = 0
-LOGTIMEFORMAT = '%Y%m%d'
+LOGTIMEFORMAT = '%Y%m%d%H'
 log_time      = time.strftime( LOGTIMEFORMAT,time.localtime(time.time()))
-log_name      = "log-%s.txt" % log_time 
+log_name      = "log-%s.txt" % log_time
+DEBUG_FLAG    = 0
 
 logging.basicConfig ( # 配置日志输出的方式及格式
     level = logging.DEBUG,
     filename = log_name,
     filemode = 'w',
-    format = u'【%(asctime)s】 %(levelname)s %(message)s',
+    format = u'【%(asctime)s】 %(message)s',
 )
 
 class UartListen(QThread):
@@ -145,11 +146,17 @@ class QtqBurner(QWidget):
             u'四川移动'])
         self.pro_label = QLabel(u"选择协议:")
         self.pro_label.setFixedSize(60, 20)
+<<<<<<< .mine
         self.pro_button = QPushButton(u"生效协议")
+=======
+        self.pro_button = QPushButton(u"生效协议")
+>>>>>>> .theirs
+        self.debug_button = QPushButton(u"打开调试信息")
         yyk_layout = QHBoxLayout()
         yyk_layout.addWidget(self.pro_label)
         yyk_layout.addWidget(self.pro_combo)
         yyk_layout.addWidget(self.pro_button)
+        yyk_layout.addWidget(self.debug_button)
 
         self.dtq_wiget.setLayout(dtq_layout)
         self.yyk_wiget.setLayout(yyk_layout)
@@ -159,7 +166,7 @@ class QtqBurner(QWidget):
 
         self.browser = QTextBrowser()
         self.browser.setFont(QFont("Courier New", 10, QFont.Bold))
-        self.burn_button = QPushButton(u"开始烧录(DTQ)")
+        self.burn_button = QPushButton(u"手动烧录(DTQ)")
         self.burn_button.setFont(QFont("Courier New", 14, QFont.Bold))
         self.burn_button.setFixedHeight(40)
         vbox = QVBoxLayout()
@@ -180,6 +187,7 @@ class QtqBurner(QWidget):
         self.burn_button.clicked.connect(self.download_image)
         self.clear_button.clicked.connect(self.clear_text)
         self.pro_button.clicked.connect(self.yyk_update_pro)
+        self.debug_button.clicked.connect(self.yyk_debug)
 
         self.start_button.clicked.connect(self.band_start)
         self.save_button.clicked.connect(self.exchange_file)
@@ -192,19 +200,37 @@ class QtqBurner(QWidget):
         self.timer.timeout.connect(self.update_time)
         self.timer.start(1000)
 
+    def yyk_debug(self):
+        global DEBUG_FLAG
+        if DEBUG_FLAG == 0:
+            self.debug_button.setText(u"关闭调试信息")
+            DEBUG_FLAG = 1
+            return
+        if DEBUG_FLAG == 1:
+            self.debug_button.setText(u"打开调试信息")
+            DEBUG_FLAG = 0
+            return
+        
+
     def yyk_update_pro(self):
         global input_count
         global ser
 
         pro_name = unicode(self.pro_combo.currentText())
+        ISOTIMEFORMAT = '%Y-%m-%d %H:%M:%S'
+        now = time.strftime( ISOTIMEFORMAT,time.localtime(time.time()))
+
+        if ser == 0:
+            self.open_uart()
 
         if ser.isOpen() == True:
-            cmd = '{"fun": "si24r2e_auto_burn","setting": "1","pro_index": "%d"}'  %  self.pro_dict[pro_name]
+            self.start_button.setText(u"关闭接收器")
+            cmd = '{"fun": "si24r2e_auto_burn","setting": "1","time": "%s","pro_index": "%d"}' \
+                %  ( now, self.pro_dict[pro_name])
             ser.write(cmd)
             input_count = input_count + 1
             data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
-            self.uart_update_text(data)
-
+            self.browser.append(data )
 
     def update_time(self):
         self.time_lineedit.setText(time.strftime(
@@ -229,18 +255,20 @@ class QtqBurner(QWidget):
             json_dict = json.loads(str(json_str))
             print json_dict
 
-        if json_dict.has_key(u"card_id") == True:
-            self.dtq_id = json_dict[u"card_id"]
-            self.dtq_id_lineedit.setText(self.dtq_id)
-            if json_dict.has_key(u"update_card_info") == True:
-                self.exchange_file()
-
         if json_dict.has_key(u"fun") == True:
             fun = json_dict[u"fun"]
+            if fun == u"update_card_info":
+                self.dtq_id = json_dict[u"card_id"]
+                self.dtq_id_lineedit.setText(self.dtq_id)
+                self.exchange_file()
+                return
+
             if fun == u"card_setting":
                 if json_dict.has_key(u"result") == True:
                     result = json_dict[u"result"]
                     pro_name = json_dict[u"pro_name"]
+                    self.dtq_id = json_dict[u"card_id"]
+                    self.dtq_id_lineedit.setText(self.dtq_id)
                     if result == u"0":
                         self.browser.append(u"<font color=green>%s@UID:[%s] 卡片配置成功！" % (pro_name,self.dtq_id))
                         logging.debug(u"%s@UID:[%s] 卡片配置成功！" % (pro_name,self.dtq_id))
@@ -250,6 +278,7 @@ class QtqBurner(QWidget):
                     if result == u"-2":
                         self.browser.append(u"<font color=red>%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id))
                         logging.debug(u"%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id))
+                return
 
             if fun == u"rssi_check":
                 if json_dict.has_key(u"result") == True:
@@ -262,6 +291,7 @@ class QtqBurner(QWidget):
                     else:
                         self.browser.append(u"<font color=red>%s@UID:[%s] RSSI校验失败！" % (pro_name,self.dtq_id))
                         logging.debug(u"%s@UID:[%s] RSSI校验失败！" % (pro_name,self.dtq_id))
+                return
 
             if fun == u"si24r2e_auto_burn":
                 if json_dict.has_key(u"result") == True:
@@ -271,8 +301,31 @@ class QtqBurner(QWidget):
                         self.browser.append(u"<font color=green>设置协议:[%s] 成功!" % pro_name )
                         logging.debug(u"设置协议:[%s] 成功!" % pro_name )
                     else:
-                        self.browser.append(u"<font color=green>%s@设置协议:[%s] 失败!" % pro_name )
+                        self.browser.append(u"<font color=red>%s@设置协议:[%s] 失败!" % pro_name )
                         logging.debug(u"设置协议:[%s] 失败!" % pro_name )
+                return
+                    
+            if fun == u"bind_start":
+                if json_dict.has_key(u"result") == True:
+                    result = json_dict[u"result"]
+                    if result == u"0":
+                        self.browser.append(u"<font color=green>开启成功!" )
+                        logging.debug(u"开启成功!" )
+                    else:
+                        self.browser.append(u"<font color=red>开启失败!" )
+                        logging.debug(u"开启失败!" )
+                return
+
+            if fun == u"Error":
+                if json_dict.has_key(u"description") == True:
+                    result = json_dict[u"description"]
+                    self.browser.append(u"<font color=red>错误类型:%s" % result )
+                    logging.debug(u"错误类型:%s" % result )
+                return
+
+            if DEBUG_FLAG == 1:
+                if fun == u"debug":
+                    self.browser.append(data)
         else:
             self.browser.append(data)
 
@@ -317,10 +370,7 @@ class QtqBurner(QWidget):
             f = open(self.dtq_image_path)
             li = f.readlines()
             f.close()
-            #print type(li)
-            # id_data = str(self.dtq_id_lineedit.text())
-            # id_data = "%08X" % string.atoi(id_data)
-            #print id_data
+
             time_data = time.strftime( '%Y%m%d',time.localtime(time.time()))
             insert_data = "04FC0000" + time_data
             insert_data_hex = insert_data.decode("hex")
@@ -339,10 +389,10 @@ class QtqBurner(QWidget):
                 new_file.write(i)
             new_file.close()
 
-            self.browser.append(u"<font color=green>UID:[%s] HEX文件转换成功！" %
+            self.browser.append(u"<font color=green>DTQ@UID:[%s] HEX文件转换成功！" %
                 str(self.dtq_id_lineedit.text()) )
         else:
-            self.browser.append(u"<font color=red>错误：无原始文件！")
+            self.browser.append(u"<font color=red>DTQ@错误：无原始文件！")
 
     def band_start(self):
         global ser
@@ -381,18 +431,18 @@ class QtqBurner(QWidget):
         id_str = str(self.dtq_id_lineedit.text())
         result = os.system( cmd1 )
         if result != 0:
-            self.browser.append(u"<font color=red>UID:[%s] 烧写失败！" % id_str )
-            logging.debug(u"UID:[%s] 烧写失败！" % id_str )
+            self.browser.append(u"<font color=red>DTQ@UID:[%s] 烧写失败！" % id_str )
+            logging.debug(u"DTQ@UID:[%s] 烧写失败！" % id_str )
             return
 
         result = os.system( cmd2 )
         if result != 0:
-            self.browser.append(u"<font color=red>UID:[%s] 烧写失败！" % id_str )
-            logging.debug(u"UID:[%s] 烧写失败！" % id_str )
+            self.browser.append(u"<font color=red>DTQ@UID:[%s] 烧写失败！" % id_str )
+            logging.debug(u"DTQ@UID:[%s] 烧写失败！" % id_str )
             return
 
-        self.browser.append(u"<font color=green>UID:[%s] 烧写成功！" % id_str )
-        logging.debug(u"UID:[%s] 烧写成功！" % id_str )
+        self.browser.append(u"<font color=green>DTQ@UID:[%s] 烧写成功！" % id_str )
+        logging.debug(u"DTQ@UID:[%s] 烧写成功！" % id_str )
 
 if __name__=='__main__':
     app = QApplication(sys.argv)
