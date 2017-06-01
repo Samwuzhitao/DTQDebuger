@@ -10,9 +10,10 @@ import time
 import os
 import sys
 import logging
+import json
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
-from JsonDecode import *
+from JsonDecode   import *
 
 ser           = 0
 input_count   = 0
@@ -30,9 +31,9 @@ logging.basicConfig ( # 配置日志输出的方式及格式
 class UartListen(QThread):
     def __init__(self,parent=None):
         super(UartListen,self).__init__(parent)
-        self.working=True
-        self.num=0
-        self.json_revice = JsonDecode()
+        self.working       = True
+        self.num           = 0
+        self.json_revice   = JsonDecode()
         self.ReviceFunSets = { 0:self.uart_down_load_image_0 }
 
     def __del__(self):
@@ -48,8 +49,7 @@ class UartListen(QThread):
         if len(str1) != 0:
             now = time.strftime( ISOTIMEFORMAT,
                 time.localtime(time.time()))
-            recv_str = u"<b>R[%d]: </b>" % (input_count-1) + u"%s" % str1
-
+            recv_str = u"R[%d]: %s" % (input_count-1,str1)
         return recv_str
 
     def run(self):
@@ -58,7 +58,7 @@ class UartListen(QThread):
         while self.working==True:
             if ser.isOpen() == True:
                 read_char = ser.read(1)
-                recv_str = self.ReviceFunSets[0]( read_char )
+                recv_str  = self.ReviceFunSets[0]( read_char )
                 if len(recv_str) > 0:
                     self.emit(SIGNAL('output(QString)'),recv_str)
 
@@ -127,8 +127,8 @@ class QtqBurner(QWidget):
         dtq_layout.addWidget(self.boot_button)
         dtq_layout.addWidget(self.save_button)
 
-        self.yyk_wiget     = QWidget()
-        self.pro_combo= QComboBox(self)
+        self.yyk_wiget = QWidget()
+        self.pro_combo = QComboBox(self)
         self.pro_combo.addItems([
             u'我司',
             u'江西移动',
@@ -143,14 +143,13 @@ class QtqBurner(QWidget):
             u'山西移动_统一协议',
             u'安徽移动',
             u'四川移动'])
-        self.pro_label=QLabel(u"选择协议:")
+        self.pro_label = QLabel(u"选择协议:")
         self.pro_label.setFixedSize(60, 20)
-        self.save_button1  = QPushButton(u"生效协议")
+        self.pro_button = QPushButton(u"生效协议")
         yyk_layout = QHBoxLayout()
         yyk_layout.addWidget(self.pro_label)
         yyk_layout.addWidget(self.pro_combo)
-
-        yyk_layout.addWidget(self.save_button1)
+        yyk_layout.addWidget(self.pro_button)
 
         self.dtq_wiget.setLayout(dtq_layout)
         self.yyk_wiget.setLayout(yyk_layout)
@@ -159,8 +158,8 @@ class QtqBurner(QWidget):
         self.dtq_tabwidget.addTab(self.yyk_wiget, "&YYK")
 
         self.browser = QTextBrowser()
-        self.browser.setFont(QFont("Courier New", 14, QFont.Bold))
-        self.burn_button = QPushButton(u"开始烧录")
+        self.browser.setFont(QFont("Courier New", 10, QFont.Bold))
+        self.burn_button = QPushButton(u"开始烧录(DTQ)")
         self.burn_button.setFont(QFont("Courier New", 14, QFont.Bold))
         self.burn_button.setFixedHeight(40)
         vbox = QVBoxLayout()
@@ -175,11 +174,12 @@ class QtqBurner(QWidget):
 
         box.addLayout(vbox)
         self.setLayout(box)
-        self.resize( 500, 500 )
+        self.resize( 580, 500 )
 
         self.boot_button.clicked.connect(self.choose_image_file)
         self.burn_button.clicked.connect(self.download_image)
         self.clear_button.clicked.connect(self.clear_text)
+        self.pro_button.clicked.connect(self.yyk_update_pro)
 
         self.start_button.clicked.connect(self.band_start)
         self.save_button.clicked.connect(self.exchange_file)
@@ -191,6 +191,20 @@ class QtqBurner(QWidget):
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_time)
         self.timer.start(1000)
+
+    def yyk_update_pro(self):
+        global input_count
+        global ser
+
+        pro_name = unicode(self.pro_combo.currentText())
+
+        if ser.isOpen() == True:
+            cmd = '{"fun": "si24r2e_auto_burn","setting": "1","pro_index": "%d"}'  %  self.pro_dict[pro_name]
+            ser.write(cmd)
+            input_count = input_count + 1
+            data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
+            self.uart_update_text(data)
+
 
     def update_time(self):
         self.time_lineedit.setText(time.strftime(
@@ -208,16 +222,57 @@ class QtqBurner(QWidget):
             ser.close()
 
     def uart_update_text(self,data):
+        json_dict = {}
+        if data[0] == 'R':
+            json_str = data[6:]
+            # print json_str
+            json_dict = json.loads(str(json_str))
+            print json_dict
 
-        # print data
-        # print data[34 + 6:41 + 6]
-        if data[34 + 6:41 + 6] == "card_id":
-            #id_data = "%08X" % string.atoi(data[44:54])
-            # id_data = "%010d" % string.atoi(str(data[44+6:54+6]))
-            self.dtq_id = data[44+6:54+6]
-            #string.atoi(str(self.dtq_id_lineedit.text()))
+        if json_dict.has_key(u"card_id") == True:
+            self.dtq_id = json_dict[u"card_id"]
             self.dtq_id_lineedit.setText(self.dtq_id)
-            self.exchange_file()
+            if json_dict.has_key(u"update_card_info") == True:
+                self.exchange_file()
+
+        if json_dict.has_key(u"fun") == True:
+            fun = json_dict[u"fun"]
+            if fun == u"card_setting":
+                if json_dict.has_key(u"result") == True:
+                    result = json_dict[u"result"]
+                    pro_name = json_dict[u"pro_name"]
+                    if result == u"0":
+                        self.browser.append(u"<font color=green>%s@UID:[%s] 卡片配置成功！" % (pro_name,self.dtq_id))
+                        logging.debug(u"%s@UID:[%s] 卡片配置成功！" % (pro_name,self.dtq_id))
+                    if result == u"-1":
+                        self.browser.append(u"<font color=red>%s@UID:[%s] 卡片配置失败:烧写失败！" % (pro_name,self.dtq_id))
+                        logging.debug(u"%s@UID:[%s] 卡片配置失败:烧写失败！" % (pro_name,self.dtq_id))
+                    if result == u"-2":
+                        self.browser.append(u"<font color=red>%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id))
+                        logging.debug(u"%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id))
+
+            if fun == u"rssi_check":
+                if json_dict.has_key(u"result") == True:
+                    result = json_dict[u"result"]
+                    rssi   = json_dict[u"check_rssi"]
+                    pro_name = json_dict[u"pro_name"]
+                    if result == u"0":
+                        self.browser.append(u"<font color=green>%s@UID:[%s] RSSI校验成功！RSSI = %s" % (pro_name,self.dtq_id,rssi))
+                        logging.debug(u"%s@UID:[%s] RSSI校验成功！RSSI = %s" % (pro_name,self.dtq_id,rssi))
+                    else:
+                        self.browser.append(u"<font color=red>%s@UID:[%s] RSSI校验失败！" % (pro_name,self.dtq_id))
+                        logging.debug(u"%s@UID:[%s] RSSI校验失败！" % (pro_name,self.dtq_id))
+
+            if fun == u"si24r2e_auto_burn":
+                if json_dict.has_key(u"result") == True:
+                    result = json_dict[u"result"]
+                    pro_name = json_dict[u"pro_name"]
+                    if result == u"0":
+                        self.browser.append(u"<font color=green>设置协议:[%s] 成功!" % pro_name )
+                        logging.debug(u"设置协议:[%s] 成功!" % pro_name )
+                    else:
+                        self.browser.append(u"<font color=green>%s@设置协议:[%s] 失败!" % pro_name )
+                        logging.debug(u"设置协议:[%s] 失败!" % pro_name )
         else:
             self.browser.append(data)
 
@@ -299,7 +354,7 @@ class QtqBurner(QWidget):
             cmd = "{'fun':'bind_start'}"
             ser.write(cmd)
             input_count = input_count + 1
-            data = u"<b>S[%d]: </b>" % (input_count-1) + u"%s" % cmd
+            data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
             self.uart_update_text(data)
             self.start_button.setText(u"关闭接收器")
 
