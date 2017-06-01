@@ -19,7 +19,8 @@ ser           = 0
 input_count   = 0
 LOGTIMEFORMAT = '%Y%m%d%H'
 log_time      = time.strftime( LOGTIMEFORMAT,time.localtime(time.time()))
-log_name      = "log-%s.txt" % log_time 
+log_name      = "log-%s.txt" % log_time
+DEBUG_FLAG    = 0
 
 logging.basicConfig ( # 配置日志输出的方式及格式
     level = logging.DEBUG,
@@ -146,10 +147,12 @@ class QtqBurner(QWidget):
         self.pro_label = QLabel(u"选择协议:")
         self.pro_label.setFixedSize(60, 20)
         self.pro_button = QPushButton(u"生效协议")
+        self.debug_button = QPushButton(u"打开调试信息")
         yyk_layout = QHBoxLayout()
         yyk_layout.addWidget(self.pro_label)
         yyk_layout.addWidget(self.pro_combo)
         yyk_layout.addWidget(self.pro_button)
+        yyk_layout.addWidget(self.debug_button)
 
         self.dtq_wiget.setLayout(dtq_layout)
         self.yyk_wiget.setLayout(yyk_layout)
@@ -180,6 +183,7 @@ class QtqBurner(QWidget):
         self.burn_button.clicked.connect(self.download_image)
         self.clear_button.clicked.connect(self.clear_text)
         self.pro_button.clicked.connect(self.yyk_update_pro)
+        self.debug_button.clicked.connect(self.yyk_debug)
 
         self.start_button.clicked.connect(self.band_start)
         self.save_button.clicked.connect(self.exchange_file)
@@ -191,6 +195,18 @@ class QtqBurner(QWidget):
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_time)
         self.timer.start(1000)
+
+    def yyk_debug(self):
+        global DEBUG_FLAG
+        if DEBUG_FLAG == 0:
+            self.debug_button.setText(u"关闭调试信息")
+            DEBUG_FLAG = 1
+            return
+        if DEBUG_FLAG == 1:
+            self.debug_button.setText(u"打开调试信息")
+            DEBUG_FLAG = 0
+            return
+        
 
     def yyk_update_pro(self):
         global input_count
@@ -301,6 +317,10 @@ class QtqBurner(QWidget):
                     self.browser.append(u"<font color=red>错误类型:%s" % result )
                     logging.debug(u"错误类型:%s" % result )
                 return
+
+            if DEBUG_FLAG == 1:
+                if fun == u"debug":
+                    self.browser.append(data)
         else:
             self.browser.append(data)
 
