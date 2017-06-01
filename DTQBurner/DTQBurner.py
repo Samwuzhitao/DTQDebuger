@@ -25,7 +25,7 @@ logging.basicConfig ( # 配置日志输出的方式及格式
     level = logging.DEBUG,
     filename = log_name,
     filemode = 'w',
-    format = u'【%(asctime)s】 %(levelname)s %(message)s',
+    format = u'【%(asctime)s】 %(message)s',
 )
 
 class UartListen(QThread):
@@ -200,13 +200,17 @@ class QtqBurner(QWidget):
         ISOTIMEFORMAT = '%Y-%m-%d %H:%M:%S'
         now = time.strftime( ISOTIMEFORMAT,time.localtime(time.time()))
 
+        if ser == 0:
+            self.open_uart()
+
         if ser.isOpen() == True:
+            self.start_button.setText(u"关闭接收器")
             cmd = '{"fun": "si24r2e_auto_burn","setting": "1","time": "%s","pro_index": "%d"}' \
                 %  ( now, self.pro_dict[pro_name])
             ser.write(cmd)
             input_count = input_count + 1
             data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
-            self.uart_update_text(data)
+            self.browser.append(data )
 
     def update_time(self):
         self.time_lineedit.setText(time.strftime(
@@ -227,7 +231,7 @@ class QtqBurner(QWidget):
         json_dict = {}
         if data[0] == 'R':
             json_str = data[6:]
-            # print json_str
+            print json_str
             json_dict = json.loads(str(json_str))
 
         if json_dict.has_key(u"fun") == True:
@@ -289,6 +293,13 @@ class QtqBurner(QWidget):
                     else:
                         self.browser.append(u"<font color=red>开启失败!" )
                         logging.debug(u"开启失败!" )
+                return
+
+            if fun == u"Error":
+                if json_dict.has_key(u"description") == True:
+                    result = json_dict[u"description"]
+                    self.browser.append(u"<font color=red>错误类型:%s" % result )
+                    logging.debug(u"错误类型:%s" % result )
                 return
         else:
             self.browser.append(data)
