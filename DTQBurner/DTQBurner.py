@@ -299,7 +299,6 @@ class QtqBurner(QWidget):
             self.open_uart()
 
         if ser.isOpen() == True:
-            self.start_button.setText(u"关闭接收器")
             cmd = '{"fun": "si24r2e_auto_burn","setting": "1","time": "%s"}' % now
             ser.write(cmd)
             input_count = input_count + 1
@@ -364,11 +363,13 @@ class QtqBurner(QWidget):
 
         if input_count == 0:
             if ser.isOpen() == True:
+                self.start_button.setText(u"关闭接收器")
                 self.browser.append("<font color=red> Open  <b>%s</b> \
                     OK!</font>" % ser.portstr )
                 self.uart_listen_thread.start()
                 input_count = input_count + 1
         else:
+            self.start_button.setText(u"打开接收器")
             self.browser.append("<font color=red> Close <b>%s</b> \
                 OK!</font>" % ser.portstr )
             input_count = 0
@@ -416,7 +417,6 @@ class QtqBurner(QWidget):
             input_count = input_count + 1
             data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
             # self.uart_update_text(data)
-            self.start_button.setText(u"关闭接收器")
 
     def choose_image_file(self):
         button = self.sender()
