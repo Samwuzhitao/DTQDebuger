@@ -62,7 +62,6 @@ class UartListen(QThread):
                 if len(recv_str) > 0:
                     self.emit(SIGNAL('output(QString)'),recv_str)
 
-
 class QtqBurner(QWidget):
     def __init__(self, parent=None):
         global ser
@@ -97,7 +96,7 @@ class QtqBurner(QWidget):
             "Error"            :self.Error,
             "debug"            :self.debug
         }
-     
+
         self.DEBUG_FLAG    = 0
         self.FILTER_FLAG   = 0
         self.setWindowTitle(u"烧录工具v0.1.1")
@@ -110,7 +109,6 @@ class QtqBurner(QWidget):
         c_hbox = QHBoxLayout()
         c_hbox.addWidget(self.com_combo)
         c_hbox.addWidget(self.start_button)
-        
         c_hbox.addWidget(self.clear_button)
 
         self.dtq_id_label=QLabel(u"设备ID:")
@@ -128,17 +126,18 @@ class QtqBurner(QWidget):
 
         self.dtq_tabwidget = QTabWidget()
         self.dtq_tabwidget.setFixedHeight(65)
-       
         self.dtq_wiget    = QWidget()
-        self.boot_button  = QPushButton(u"答题器固件")
+        self.boot_button  = QPushButton(u"添加固件")
         self.boot_browser = QLineEdit()
         self.boot_label=QLabel(u"文件:")
-        self.save_button  = QPushButton(u"手动转换文件")
+        self.save_button  = QPushButton(u"转换文件")
+        self.burn_button = QPushButton(u"烧录")
         dtq_layout = QHBoxLayout()
         dtq_layout.addWidget(self.boot_label)
         dtq_layout.addWidget(self.boot_browser)
         dtq_layout.addWidget(self.boot_button)
         dtq_layout.addWidget(self.save_button)
+        dtq_layout.addWidget(self.burn_button)
 
         self.yyk_wiget = QWidget()
         self.pro_combo = QComboBox(self)
@@ -176,19 +175,14 @@ class QtqBurner(QWidget):
 
         self.browser = QTextBrowser()
         self.browser.setFont(QFont("Courier New", 10, QFont.Bold))
-        self.burn_button = QPushButton(u"手动烧录(DTQ)")
-        self.burn_button.setFont(QFont("Courier New", 14, QFont.Bold))
-        self.burn_button.setFixedHeight(40)
-        vbox = QVBoxLayout()
 
+        vbox = QVBoxLayout()
         vbox.addWidget(self.dtq_tabwidget)
         vbox.addWidget(self.browser)
-        vbox.addWidget(self.burn_button)
 
         box = QVBoxLayout()
         box.addLayout(c_hbox)
         box.addLayout(e_hbox)
-
         box.addLayout(vbox)
         self.setLayout(box)
         self.resize( 580, 500 )
@@ -231,6 +225,9 @@ class QtqBurner(QWidget):
             if result == u"-2":
                 self.browser.append(u"<font color=red>%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id))
                 logging.debug(u"%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id))
+            if result == u"-3":
+                self.browser.append(u"<font color=red>%s@UID:[%s] 卡片配置失败:管脚松动，请接好线！" % (pro_name,self.dtq_id))
+                logging.debug(u"%s@UID:[%s] 卡片配置失败:管脚松动，请接好线！" % (pro_name,self.dtq_id))
 
     def rssi_check(self,json_dict):
         if json_dict.has_key(u"result") == True:
@@ -322,7 +319,7 @@ class QtqBurner(QWidget):
             ser.write(cmd)
             input_count = input_count + 1
             data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
-            self.browser.append(data )
+            # self.browser.append(data )
 
     def update_time(self):
         self.time_lineedit.setText(time.strftime(
@@ -349,7 +346,11 @@ class QtqBurner(QWidget):
 
         if json_dict.has_key(u"fun") == True:
             fun = json_dict[u"fun"]
-            self.CmdFunSets[fun](json_dict)
+            if self.CmdFunSets.has_key(fun) == True:
+                self.CmdFunSets[fun](json_dict)
+            else:
+                self.browser.append(u"<font color=red>未识别指令:%s" % fun )
+                logging.debug(u"未识别指令:%s" % fun )
         else:
             self.browser.append(data)
 
@@ -429,7 +430,7 @@ class QtqBurner(QWidget):
             ser.write(cmd)
             input_count = input_count + 1
             data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
-            self.uart_update_text(data)
+            # self.uart_update_text(data)
             self.start_button.setText(u"关闭接收器")
 
     def choose_image_file(self):
@@ -440,7 +441,7 @@ class QtqBurner(QWidget):
         #print "clicked button is %s " % button.text()
         button_str = button.text()
 
-        if button_str == u"答题器固件":
+        if button_str == u"添加固件":
             self.dtq_image_path = unicode(QFileDialog.getOpenFileName(self, 'Open file', './'))
             if self.dtq_image_path > 0:
                 self.boot_browser.setText(self.dtq_image_path)
