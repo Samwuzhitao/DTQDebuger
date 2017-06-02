@@ -20,7 +20,6 @@ input_count   = 0
 LOGTIMEFORMAT = '%Y%m%d%H'
 log_time      = time.strftime( LOGTIMEFORMAT,time.localtime(time.time()))
 log_name      = "log-%s.txt" % log_time
-DEBUG_FLAG    = 0
 
 logging.basicConfig ( # 配置日志输出的方式及格式
     level = logging.DEBUG,
@@ -63,6 +62,7 @@ class UartListen(QThread):
                 if len(recv_str) > 0:
                     self.emit(SIGNAL('output(QString)'),recv_str)
 
+
 class QtqBurner(QWidget):
     def __init__(self, parent=None):
         global ser
@@ -88,6 +88,18 @@ class QtqBurner(QWidget):
         u'安徽移动':11,
         u'四川移动':12
         }
+        self.CmdFunSets = {
+            "update_card_info" :self.update_card_info,
+            "card_setting"     :self.card_setting,
+            "rssi_check"       :self.rssi_check,
+            "si24r2e_auto_burn":self.si24r2e_auto_burn,
+            "bind_start"       :self.bind_start,
+            "Error"            :self.Error,
+            "debug"            :self.debug
+        }
+     
+        self.DEBUG_FLAG    = 0
+        self.FILTER_FLAG   = 0
         self.setWindowTitle(u"烧录工具v0.1.1")
 
         self.com_combo=QComboBox(self)
@@ -146,17 +158,15 @@ class QtqBurner(QWidget):
             u'四川移动'])
         self.pro_label = QLabel(u"选择协议:")
         self.pro_label.setFixedSize(60, 20)
-<<<<<<< .mine
         self.pro_button = QPushButton(u"生效协议")
-=======
-        self.pro_button = QPushButton(u"生效协议")
->>>>>>> .theirs
         self.debug_button = QPushButton(u"打开调试信息")
+        self.filter_button = QPushButton(u"打开UID过滤")
         yyk_layout = QHBoxLayout()
         yyk_layout.addWidget(self.pro_label)
         yyk_layout.addWidget(self.pro_combo)
         yyk_layout.addWidget(self.pro_button)
         yyk_layout.addWidget(self.debug_button)
+        yyk_layout.addWidget(self.filter_button)
 
         self.dtq_wiget.setLayout(dtq_layout)
         self.yyk_wiget.setLayout(yyk_layout)
@@ -188,6 +198,7 @@ class QtqBurner(QWidget):
         self.clear_button.clicked.connect(self.clear_text)
         self.pro_button.clicked.connect(self.yyk_update_pro)
         self.debug_button.clicked.connect(self.yyk_debug)
+        self.filter_button.clicked.connect(self.yyk_fliter)
 
         self.start_button.clicked.connect(self.band_start)
         self.save_button.clicked.connect(self.exchange_file)
@@ -200,17 +211,98 @@ class QtqBurner(QWidget):
         self.timer.timeout.connect(self.update_time)
         self.timer.start(1000)
 
+    def update_card_info(self,json_dict):
+        self.dtq_id = json_dict[u"card_id"]
+        self.dtq_id_lineedit.setText(self.dtq_id)
+        self.exchange_file()
+
+    def card_setting(self,json_dict):
+        if json_dict.has_key(u"result") == True:
+            result = json_dict[u"result"]
+            pro_name = json_dict[u"pro_name"]
+            self.dtq_id = json_dict[u"card_id"]
+            self.dtq_id_lineedit.setText(self.dtq_id)
+            if result == u"0":
+                self.browser.append(u"<font color=green>%s@UID:[%s] 卡片配置成功！" % (pro_name,self.dtq_id))
+                logging.debug(u"%s@UID:[%s] 卡片配置成功！" % (pro_name,self.dtq_id))
+            if result == u"-1":
+                self.browser.append(u"<font color=red>%s@UID:[%s] 卡片配置失败:烧写失败！" % (pro_name,self.dtq_id))
+                logging.debug(u"%s@UID:[%s] 卡片配置失败:烧写失败！" % (pro_name,self.dtq_id))
+            if result == u"-2":
+                self.browser.append(u"<font color=red>%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id))
+                logging.debug(u"%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id))
+
+    def rssi_check(self,json_dict):
+        if json_dict.has_key(u"result") == True:
+            result = json_dict[u"result"]
+            rssi   = json_dict[u"check_rssi"]
+            self.dtq_id = json_dict[u"card_id"]
+            pro_name = json_dict[u"pro_name"]
+            if result == u"0":
+                self.browser.append(u"<font color=green>%s@UID:[%s] RSSI校验成功！RSSI = %s" % (pro_name,self.dtq_id,rssi))
+                logging.debug(u"%s@UID:[%s] RSSI校验成功！RSSI = %s" % (pro_name,self.dtq_id,rssi))
+            else:
+                self.browser.append(u"<font color=red>%s@UID:[%s] RSSI校验失败！" % (pro_name,self.dtq_id))
+                logging.debug(u"%s@UID:[%s] RSSI校验失败！" % (pro_name,self.dtq_id))
+
+    def si24r2e_auto_burn(self,json_dict):
+        if json_dict.has_key(u"result") == True:
+            result = json_dict[u"result"]
+            pro_name = json_dict[u"pro_name"]
+            if result == u"0":
+                self.browser.append(u"<font color=green>设置协议:[%s] 成功!" % pro_name )
+                logging.debug(u"设置协议:[%s] 成功!" % pro_name )
+            else:
+                self.browser.append(u"<font color=red>%s@设置协议:[%s] 失败!" % pro_name )
+                logging.debug(u"设置协议:[%s] 失败!" % pro_name )
+
+    def bind_start(self,json_dict):
+        if json_dict.has_key(u"result") == True:
+            result = json_dict[u"result"]
+            if result == u"0":
+                self.browser.append(u"<font color=green>开启成功!" )
+                logging.debug(u"开启成功!" )
+            else:
+                self.browser.append(u"<font color=red>开启失败!" )
+                logging.debug(u"开启失败!" )
+
+    def Error(self,json_dict):
+        if json_dict.has_key(u"description") == True:
+            result = json_dict[u"description"]
+            self.browser.append(u"<font color=red>错误类型:%s" % result )
+            logging.debug(u"错误类型:%s" % result )
+
+    def debug(self,json_dict):
+            data = json.dumps(json_dict)
+            if self.DEBUG_FLAG == 1:
+                if self.FILTER_FLAG == 0:
+                    self.browser.append(data)
+                else:
+                    check_uid = str(self.dtq_id_lineedit.text())
+                    if json_dict.has_key(u"uid") == True:
+                        uid = json_dict[u"uid"]
+                        if check_uid == uid:
+                            self.browser.append(data)
+
     def yyk_debug(self):
-        global DEBUG_FLAG
-        if DEBUG_FLAG == 0:
+        if self.DEBUG_FLAG == 0:
             self.debug_button.setText(u"关闭调试信息")
-            DEBUG_FLAG = 1
+            self.DEBUG_FLAG = 1
             return
-        if DEBUG_FLAG == 1:
+        if self.DEBUG_FLAG == 1:
             self.debug_button.setText(u"打开调试信息")
-            DEBUG_FLAG = 0
+            self.DEBUG_FLAG = 0
             return
-        
+
+    def yyk_fliter(self):
+        if self.FILTER_FLAG == 0:
+            self.filter_button.setText(u"关闭UID过滤")
+            self.FILTER_FLAG = 1
+            return
+        if self.FILTER_FLAG == 1:
+            self.filter_button.setText(u"打开UID过滤")
+            self.FILTER_FLAG = 0
+            return
 
     def yyk_update_pro(self):
         global input_count
@@ -257,75 +349,7 @@ class QtqBurner(QWidget):
 
         if json_dict.has_key(u"fun") == True:
             fun = json_dict[u"fun"]
-            if fun == u"update_card_info":
-                self.dtq_id = json_dict[u"card_id"]
-                self.dtq_id_lineedit.setText(self.dtq_id)
-                self.exchange_file()
-                return
-
-            if fun == u"card_setting":
-                if json_dict.has_key(u"result") == True:
-                    result = json_dict[u"result"]
-                    pro_name = json_dict[u"pro_name"]
-                    self.dtq_id = json_dict[u"card_id"]
-                    self.dtq_id_lineedit.setText(self.dtq_id)
-                    if result == u"0":
-                        self.browser.append(u"<font color=green>%s@UID:[%s] 卡片配置成功！" % (pro_name,self.dtq_id))
-                        logging.debug(u"%s@UID:[%s] 卡片配置成功！" % (pro_name,self.dtq_id))
-                    if result == u"-1":
-                        self.browser.append(u"<font color=red>%s@UID:[%s] 卡片配置失败:烧写失败！" % (pro_name,self.dtq_id))
-                        logging.debug(u"%s@UID:[%s] 卡片配置失败:烧写失败！" % (pro_name,self.dtq_id))
-                    if result == u"-2":
-                        self.browser.append(u"<font color=red>%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id))
-                        logging.debug(u"%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id))
-                return
-
-            if fun == u"rssi_check":
-                if json_dict.has_key(u"result") == True:
-                    result = json_dict[u"result"]
-                    rssi   = json_dict[u"check_rssi"]
-                    pro_name = json_dict[u"pro_name"]
-                    if result == u"0":
-                        self.browser.append(u"<font color=green>%s@UID:[%s] RSSI校验成功！RSSI = %s" % (pro_name,self.dtq_id,rssi))
-                        logging.debug(u"%s@UID:[%s] RSSI校验成功！RSSI = %s" % (pro_name,self.dtq_id,rssi))
-                    else:
-                        self.browser.append(u"<font color=red>%s@UID:[%s] RSSI校验失败！" % (pro_name,self.dtq_id))
-                        logging.debug(u"%s@UID:[%s] RSSI校验失败！" % (pro_name,self.dtq_id))
-                return
-
-            if fun == u"si24r2e_auto_burn":
-                if json_dict.has_key(u"result") == True:
-                    result = json_dict[u"result"]
-                    pro_name = json_dict[u"pro_name"]
-                    if result == u"0":
-                        self.browser.append(u"<font color=green>设置协议:[%s] 成功!" % pro_name )
-                        logging.debug(u"设置协议:[%s] 成功!" % pro_name )
-                    else:
-                        self.browser.append(u"<font color=red>%s@设置协议:[%s] 失败!" % pro_name )
-                        logging.debug(u"设置协议:[%s] 失败!" % pro_name )
-                return
-                    
-            if fun == u"bind_start":
-                if json_dict.has_key(u"result") == True:
-                    result = json_dict[u"result"]
-                    if result == u"0":
-                        self.browser.append(u"<font color=green>开启成功!" )
-                        logging.debug(u"开启成功!" )
-                    else:
-                        self.browser.append(u"<font color=red>开启失败!" )
-                        logging.debug(u"开启失败!" )
-                return
-
-            if fun == u"Error":
-                if json_dict.has_key(u"description") == True:
-                    result = json_dict[u"description"]
-                    self.browser.append(u"<font color=red>错误类型:%s" % result )
-                    logging.debug(u"错误类型:%s" % result )
-                return
-
-            if DEBUG_FLAG == 1:
-                if fun == u"debug":
-                    self.browser.append(data)
+            self.CmdFunSets[fun](json_dict)
         else:
             self.browser.append(data)
 
