@@ -73,19 +73,19 @@ class QtqBurner(QWidget):
         self.new_image_path = ''
         self.dtq_id         = ''
         self.pro_dict = {
-        u'我司':0,
-        u'江西移动':1,
-        u'重庆移动':2,
-        u'内蒙移动':3,
-        u'广西移动(初稿)':4,
-        u'广西移动(定稿)':5,
-        u'贵州移动':6,
-        u'甘肃移动':7,
-        u'山西移动_天波':8,
-        u'山西移动_鑫诺':9,
-        u'山西移动_统一协议':10,
-        u'安徽移动':11,
-        u'四川移动':12
+            u'ZKXL'    :u'中科讯联（我司）',
+            u'JXYD'    :u'江西移动',
+            u'CQYD'    :u'重庆移动',
+            u'NMYD'    :u'内蒙移动',
+            u'GXYDCG'  :u'广西移动(初稿)',
+            u'GXYDDG'  :u'广西移动(定稿)',
+            u'GZYD'    :u'贵州移动',
+            u'GSYD'    :u'甘肃移动',
+            u'SXYDTB'  :u'山西移动_天波',
+            u'SXYDXN'  :u'山西移动_鑫诺',
+            u'SXYDTYXY':u'山西移动_统一协议',
+            u'AHYD'    :u'安徽移动',
+            u'SCYD'    :u'四川移动'
         }
         self.CmdFunSets = {
             "update_card_info" :self.update_card_info,
@@ -96,7 +96,6 @@ class QtqBurner(QWidget):
             "Error"            :self.Error,
             "debug"            :self.debug
         }
-
         self.DEBUG_FLAG    = 0
         self.FILTER_FLAG   = 0
         self.setWindowTitle(u"烧录工具v0.1.1")
@@ -140,29 +139,15 @@ class QtqBurner(QWidget):
         dtq_layout.addWidget(self.burn_button)
 
         self.yyk_wiget = QWidget()
-        self.pro_combo = QComboBox(self)
-        self.pro_combo.addItems([
-            u'我司',
-            u'江西移动',
-            u'重庆移动',
-            u'内蒙移动',
-            u'广西移动(初稿)',
-            u'广西移动(定稿)',
-            u'贵州移动',
-            u'甘肃移动',
-            u'山西移动_天波',
-            u'山西移动_鑫诺',
-            u'山西移动_统一协议',
-            u'安徽移动',
-            u'四川移动'])
-        self.pro_label = QLabel(u"选择协议:")
+        self.pro_lineedit = QLineEdit()
+        self.pro_label = QLabel(u"当前协议:")
         self.pro_label.setFixedSize(60, 20)
-        self.pro_button = QPushButton(u"生效协议")
+        self.pro_button = QPushButton(u"开始烧录")
         self.debug_button = QPushButton(u"打开调试信息")
         self.filter_button = QPushButton(u"打开UID过滤")
         yyk_layout = QHBoxLayout()
         yyk_layout.addWidget(self.pro_label)
-        yyk_layout.addWidget(self.pro_combo)
+        yyk_layout.addWidget(self.pro_lineedit)
         yyk_layout.addWidget(self.pro_button)
         yyk_layout.addWidget(self.debug_button)
         yyk_layout.addWidget(self.filter_button)
@@ -247,6 +232,8 @@ class QtqBurner(QWidget):
             result = json_dict[u"result"]
             pro_name = json_dict[u"pro_name"]
             if result == u"0":
+                if self.pro_dict.has_key(pro_name) == True:
+                    self.pro_lineedit.setText(self.pro_dict[pro_name])
                 self.browser.append(u"<font color=green>设置协议:[%s] 成功!" % pro_name )
                 logging.debug(u"设置协议:[%s] 成功!" % pro_name )
             else:
@@ -305,7 +292,6 @@ class QtqBurner(QWidget):
         global input_count
         global ser
 
-        pro_name = unicode(self.pro_combo.currentText())
         ISOTIMEFORMAT = '%Y-%m-%d %H:%M:%S'
         now = time.strftime( ISOTIMEFORMAT,time.localtime(time.time()))
 
@@ -314,8 +300,7 @@ class QtqBurner(QWidget):
 
         if ser.isOpen() == True:
             self.start_button.setText(u"关闭接收器")
-            cmd = '{"fun": "si24r2e_auto_burn","setting": "1","time": "%s","pro_index": "%d"}' \
-                %  ( now, self.pro_dict[pro_name])
+            cmd = '{"fun": "si24r2e_auto_burn","setting": "1","time": "%s"}' % now
             ser.write(cmd)
             input_count = input_count + 1
             data = u"S[%d]: " % (input_count-1) + u"%s" % cmd

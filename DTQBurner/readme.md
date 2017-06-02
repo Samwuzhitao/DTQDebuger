@@ -64,3 +64,4 @@
 * **描述** :
 > 1. 修改DTQBurner，封装JSON指令解析到一个字典
 > 2. 修改DTQBurner，增加SPI配置阶段松动错误类型提示
+> 3. 修改DTQBurner，剔除PC端协议选择接口
