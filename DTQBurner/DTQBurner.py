@@ -202,16 +202,16 @@ class QtqBurner(QWidget):
             self.dtq_id = json_dict[u"card_id"]
             self.dtq_id_lineedit.setText(self.dtq_id)
             if result == u"0":
-                self.browser.append(u"<font color=green>%s@UID:[%s] 卡片配置成功！" % (pro_name,self.dtq_id))
+                self.browser.append(u"%s@UID:[%s] 卡片配置成功！" % (pro_name,self.dtq_id))
                 logging.debug(u"%s@UID:[%s] 卡片配置成功！" % (pro_name,self.dtq_id))
             if result == u"-1":
-                self.browser.append(u"<font color=red>%s@UID:[%s] 卡片配置失败:烧写失败！" % (pro_name,self.dtq_id))
+                self.browser.append(u"%s@UID:[%s] 卡片配置失败:烧写失败！" % (pro_name,self.dtq_id))
                 logging.debug(u"%s@UID:[%s] 卡片配置失败:烧写失败！" % (pro_name,self.dtq_id))
             if result == u"-2":
-                self.browser.append(u"<font color=red>%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id))
+                self.browser.append(u"%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id))
                 logging.debug(u"%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id))
             if result == u"-3":
-                self.browser.append(u"<font color=red>%s@UID:[%s] 卡片配置失败:管脚松动，请接好线！" % (pro_name,self.dtq_id))
+                self.browser.append(u"%s@UID:[%s] 卡片配置失败:管脚松动，请接好线！" % (pro_name,self.dtq_id))
                 logging.debug(u"%s@UID:[%s] 卡片配置失败:管脚松动，请接好线！" % (pro_name,self.dtq_id))
 
     def rssi_check(self,json_dict):
@@ -221,10 +221,10 @@ class QtqBurner(QWidget):
             self.dtq_id = json_dict[u"card_id"]
             pro_name = json_dict[u"pro_name"]
             if result == u"0":
-                self.browser.append(u"<font color=green>%s@UID:[%s] RSSI校验成功！RSSI = %s" % (pro_name,self.dtq_id,rssi))
+                self.browser.append(u"%s@UID:[%s] RSSI校验成功！RSSI = %s" % (pro_name,self.dtq_id,rssi))
                 logging.debug(u"%s@UID:[%s] RSSI校验成功！RSSI = %s" % (pro_name,self.dtq_id,rssi))
             else:
-                self.browser.append(u"<font color=red>%s@UID:[%s] RSSI校验失败！" % (pro_name,self.dtq_id))
+                self.browser.append(u"%s@UID:[%s] RSSI校验失败！" % (pro_name,self.dtq_id))
                 logging.debug(u"%s@UID:[%s] RSSI校验失败！" % (pro_name,self.dtq_id))
 
     def si24r2e_auto_burn(self,json_dict):
@@ -234,26 +234,26 @@ class QtqBurner(QWidget):
             if result == u"0":
                 if self.pro_dict.has_key(pro_name) == True:
                     self.pro_lineedit.setText(self.pro_dict[pro_name])
-                self.browser.append(u"<font color=green>设置协议:[%s] 成功!" % pro_name )
+                self.browser.append(u"设置协议:[%s] 成功!" % pro_name )
                 logging.debug(u"设置协议:[%s] 成功!" % pro_name )
             else:
-                self.browser.append(u"<font color=red>%s@设置协议:[%s] 失败!" % pro_name )
+                self.browser.append(u"%s@设置协议:[%s] 失败!" % pro_name )
                 logging.debug(u"设置协议:[%s] 失败!" % pro_name )
 
     def bind_start(self,json_dict):
         if json_dict.has_key(u"result") == True:
             result = json_dict[u"result"]
             if result == u"0":
-                self.browser.append(u"<font color=green>开启成功!" )
+                self.browser.append(u"开启成功!" )
                 logging.debug(u"开启成功!" )
             else:
-                self.browser.append(u"<font color=red>开启失败!" )
+                self.browser.append(u"开启失败!" )
                 logging.debug(u"开启失败!" )
 
     def Error(self,json_dict):
         if json_dict.has_key(u"description") == True:
             result = json_dict[u"description"]
-            self.browser.append(u"<font color=red>错误类型:%s" % result )
+            self.browser.append(u"错误类型:%s" % result )
             logging.debug(u"错误类型:%s" % result )
 
     def debug(self,json_dict):
@@ -333,7 +333,7 @@ class QtqBurner(QWidget):
             if self.CmdFunSets.has_key(fun) == True:
                 self.CmdFunSets[fun](json_dict)
             else:
-                self.browser.append(u"<font color=red>未识别指令:%s" % fun )
+                self.browser.append(u"未识别指令:%s" % fun )
                 logging.debug(u"未识别指令:%s" % fun )
         else:
             self.browser.append(data)
@@ -364,13 +364,13 @@ class QtqBurner(QWidget):
         if input_count == 0:
             if ser.isOpen() == True:
                 self.start_button.setText(u"关闭接收器")
-                self.browser.append("<font color=red> Open  <b>%s</b> \
+                self.browser.append(" Open  <b>%s</b> \
                     OK!</font>" % ser.portstr )
                 self.uart_listen_thread.start()
                 input_count = input_count + 1
         else:
             self.start_button.setText(u"打开接收器")
-            self.browser.append("<font color=red> Close <b>%s</b> \
+            self.browser.append(" Close <b>%s</b> \
                 OK!</font>" % ser.portstr )
             input_count = 0
             ser.close()
@@ -400,10 +400,10 @@ class QtqBurner(QWidget):
                 new_file.write(i)
             new_file.close()
 
-            self.browser.append(u"<font color=green>DTQ@UID:[%s] HEX文件转换成功！" %
+            self.browser.append(u"DTQ@UID:[%s] HEX文件转换成功！" %
                 str(self.dtq_id_lineedit.text()) )
         else:
-            self.browser.append(u"<font color=red>DTQ@错误：无原始文件！")
+            self.browser.append(u"DTQ@错误：无原始文件！")
 
     def band_start(self):
         global ser
@@ -441,17 +441,17 @@ class QtqBurner(QWidget):
         id_str = str(self.dtq_id_lineedit.text())
         result = os.system( cmd1 )
         if result != 0:
-            self.browser.append(u"<font color=red>DTQ@UID:[%s] 烧写失败！" % id_str )
+            self.browser.append(u"DTQ@UID:[%s] 烧写失败！" % id_str )
             logging.debug(u"DTQ@UID:[%s] 烧写失败！" % id_str )
             return
 
         result = os.system( cmd2 )
         if result != 0:
-            self.browser.append(u"<font color=red>DTQ@UID:[%s] 烧写失败！" % id_str )
+            self.browser.append(u"DTQ@UID:[%s] 烧写失败！" % id_str )
             logging.debug(u"DTQ@UID:[%s] 烧写失败！" % id_str )
             return
 
-        self.browser.append(u"<font color=green>DTQ@UID:[%s] 烧写成功！" % id_str )
+        self.browser.append(u"DTQ@UID:[%s] 烧写成功！" % id_str )
         logging.debug(u"DTQ@UID:[%s] 烧写成功！" % id_str )
 
 if __name__=='__main__':
