@@ -260,11 +260,8 @@ class QtqBurner(QWidget):
         if json_dict.has_key(u"result") == True:
             result = json_dict[u"result"]
             if result == u"0":
-                self.browser.append(u"调试信息设置成功!" )
-                logging.debug(u"调试信息设置成功!" )
-            else:
-                self.browser.append(u"调试信息设置失败!" )
-                logging.debug(u"调试信息设置失败!" )
+                self.browser.append(u"打开串口!" )
+                logging.debug(u"打开串口!" )
 
     def brun_count(self,json_dict):
         if json_dict.has_key(u"read_burn_count") == True:
@@ -285,73 +282,72 @@ class QtqBurner(QWidget):
         if json_dict.has_key(u"result") == True:
             result = json_dict[u"result"]
             if result == u"0":
-                self.browser.append(u"开启成功!" )
-                logging.debug(u"开启成功!" )
-            else:
-                self.browser.append(u"开启失败!" )
-                logging.debug(u"开启失败!" )
+                self.browser.append(u"调试信息设置成功!" )
+                logging.debug(u"调试信息设置成功!" )
 
     def yyk_debug(self):
         global ser
         global input_count
-        
-        button = self.sender()
 
-        if button is None or not isinstance(button, QPushButton):
+        if input_count   >= 1:
+            button = self.sender()
+
+            if button is None or not isinstance(button, QPushButton):
+                return
+            #print "clicked button is %s " % button.text()
+            button_str = button.text()
+
+            if button_str == u"打开调试信息":
+                self.debug_button.setText(u"关闭调试信息")
+                cmd = '{"fun":"si24r2e_show_log","setting": "1"}'
+            if button_str == u"关闭调试信息":
+                self.debug_button.setText(u"打开调试信息")
+                cmd = '{"fun":"si24r2e_show_log","setting": "0"}'
+
+            if ser == 0:
+                self.open_uart()
+            if ser.isOpen() == True:
+                ser.write(cmd)
+                input_count = input_count + 1
             return
-        #print "clicked button is %s " % button.text()
-        button_str = button.text()
-
-        if button_str == u"打开调试信息":
-            self.debug_button.setText(u"关闭调试信息")
-            cmd = '{"fun":"si24r2e_show_log","setting": "1"}'
-        if button_str == u"关闭调试信息":
-            self.debug_button.setText(u"打开调试信息")
-            cmd = '{"fun":"si24r2e_show_log","setting": "0"}'
-
-        if ser == 0:
-            self.open_uart()
-        if ser.isOpen() == True:
-            ser.write(cmd)
-            input_count = input_count + 1
-        return
 
     def yyk_update_pro(self):
-        global input_count
         global ser
+        global input_count
 
-        ISOTIMEFORMAT = '%Y-%m-%d %H:%M:%S'
-        now = time.strftime( ISOTIMEFORMAT,time.localtime(time.time()))
-        button = self.sender()
+        if input_count   >= 1:
+            ISOTIMEFORMAT = '%Y-%m-%d %H:%M:%S'
+            now = time.strftime( ISOTIMEFORMAT,time.localtime(time.time()))
+            button = self.sender()
 
-        if button is None or not isinstance(button, QPushButton):
-            return
-        #print "clicked button is %s " % button.text()
-        button_str = button.text()
+            if button is None or not isinstance(button, QPushButton):
+                return
+            #print "clicked button is %s " % button.text()
+            button_str = button.text()
 
-        if button_str == u"开始烧录":
-            self.pro_button.setText(u"停止烧录")
-            if ser == 0:
-                self.open_uart()
+            if button_str == u"开始烧录":
+                self.pro_button.setText(u"停止烧录")
+                if ser == 0:
+                    self.open_uart()
 
-            if ser.isOpen() == True:
-                cmd = '{"fun": "si24r2e_auto_burn","setting": "1","time": "%s"}' % now
-                ser.write(cmd)
-                input_count = input_count + 1
-                data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
-            return
-        
-        if button_str == u"停止烧录":
-            self.pro_button.setText(u"开始烧录")
-            if ser == 0:
-                self.open_uart()
+                if ser.isOpen() == True:
+                    cmd = '{"fun": "si24r2e_auto_burn","setting": "1","time": "%s"}' % now
+                    ser.write(cmd)
+                    input_count = input_count + 1
+                    data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
+                return
 
-            if ser.isOpen() == True:
-                cmd = '{"fun": "si24r2e_auto_burn","setting": "0","time": "%s"}' % now
-                ser.write(cmd)
-                input_count = input_count + 1
-                data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
-            return
+            if button_str == u"停止烧录":
+                self.pro_button.setText(u"开始烧录")
+                if ser == 0:
+                    self.open_uart()
+
+                if ser.isOpen() == True:
+                    cmd = '{"fun": "si24r2e_auto_burn","setting": "0","time": "%s"}' % now
+                    ser.write(cmd)
+                    input_count = input_count + 1
+                    data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
+                return
 
     def update_time(self):
         self.time_lineedit.setText(time.strftime(
@@ -398,7 +394,7 @@ class QtqBurner(QWidget):
             except serial.SerialException:
                 pass
 
-    def open_uart(self):
+    def setting_uart(self,mode):
         global ser
         global input_count
 
@@ -409,17 +405,15 @@ class QtqBurner(QWidget):
         except serial.SerialException:
             pass
 
-        if input_count == 0:
+        if mode == 1:
             if ser.isOpen() == True:
                 self.start_button.setText(u"关闭接收器")
-                self.browser.append(" Open  <b>%s</b> \
-                    OK!</font>" % ser.portstr )
                 self.uart_listen_thread.start()
                 input_count = input_count + 1
         else:
             self.start_button.setText(u"打开接收器")
-            self.browser.append(" Close <b>%s</b> \
-                OK!</font>" % ser.portstr )
+            self.pro_button.setText(u"开始烧录")
+            self.debug_button.setText(u"打开调试信息")
             input_count = 0
             ser.close()
 
@@ -457,14 +451,26 @@ class QtqBurner(QWidget):
         global ser
         global input_count
 
-        self.open_uart()
-        if ser.isOpen() == True:
-            self.uart_listen_thread.start()
-            cmd = "{'fun':'bind_start'}"
+        button = self.sender()
+        button_str = button.text()
+
+        if button_str == u"打开接收器":
+            self.setting_uart(1)
+            if ser.isOpen() == True:
+                self.uart_listen_thread.start()
+                cmd = "{'fun':'bind_start'}"
+                ser.write(cmd)
+                input_count = input_count + 1
+                data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
+                return
+
+        if button_str == u"关闭接收器":
+            cmd = '{"fun": "si24r2e_auto_burn","setting": "0"}'
             ser.write(cmd)
-            input_count = input_count + 1
-            data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
-            # self.uart_update_text(data)
+            self.setting_uart(0)
+            self.browser.append(u"关闭串口!" )
+            logging.debug(u"关闭串口!" )
+            return
 
     def choose_image_file(self):
         button = self.sender()
