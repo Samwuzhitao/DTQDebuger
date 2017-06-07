@@ -95,10 +95,11 @@ class QtqBurner(QWidget):
             "bind_start"       :self.bind_start,
             "Error"            :self.Error,
             "debug"            :self.debug,
-            "brun_count"       :self.brun_count
+            "brun_count"       :self.brun_count,
+            "si24r2e_show_log" :self.show_log
         }
         self.DEBUG_FLAG    = 0
-        self.setWindowTitle(u"烧录工具v0.1.1")
+        self.setWindowTitle(u"烧录工具v0.1.2")
 
         self.com_combo=QComboBox(self)
         self.com_combo.setFixedSize(75, 20)
@@ -147,7 +148,6 @@ class QtqBurner(QWidget):
         self.pro_label.setFixedSize(60, 20)
         self.pro_button = QPushButton(u"开始烧录")
         self.debug_button = QPushButton(u"打开调试信息")
-        # self.filter_button = QPushButton(u"打开UID过滤")
         yyk_layout = QHBoxLayout()
         yyk_layout.addWidget(self.pro_label)
         yyk_layout.addWidget(self.pro_lineedit)
@@ -155,7 +155,6 @@ class QtqBurner(QWidget):
         yyk_layout.addWidget(self.burn_count_lineedit)
         yyk_layout.addWidget(self.pro_button)
         yyk_layout.addWidget(self.debug_button)
-        # yyk_layout.addWidget(self.filter_button)
 
         self.dtq_wiget.setLayout(dtq_layout)
         self.yyk_wiget.setLayout(yyk_layout)
@@ -249,11 +248,11 @@ class QtqBurner(QWidget):
         if json_dict.has_key(u"result") == True:
             result = json_dict[u"result"]
             if result == u"0":
-                self.browser.append(u"开启成功!" )
-                logging.debug(u"开启成功!" )
+                self.browser.append(u"调试信息设置成功!" )
+                logging.debug(u"调试信息设置成功!" )
             else:
-                self.browser.append(u"开启失败!" )
-                logging.debug(u"开启失败!" )
+                self.browser.append(u"调试信息设置失败!" )
+                logging.debug(u"调试信息设置失败!" )
 
     def brun_count(self,json_dict):
         if json_dict.has_key(u"read_burn_count") == True:
@@ -267,19 +266,44 @@ class QtqBurner(QWidget):
             logging.debug(u"错误类型:%s" % result )
 
     def debug(self,json_dict):
-            data = json.dumps(json_dict)
-            if self.DEBUG_FLAG == 1:
-                 self.browser.append(data)
+        data = json.dumps(json_dict)
+        self.browser.append(data)
+
+    def show_log(self,json_dict):
+        if json_dict.has_key(u"result") == True:
+            result = json_dict[u"result"]
+            if result == u"0":
+                self.browser.append(u"开启成功!" )
+                logging.debug(u"开启成功!" )
+            else:
+                self.browser.append(u"开启失败!" )
+                logging.debug(u"开启失败!" )
 
     def yyk_debug(self):
-        if self.DEBUG_FLAG == 0:
+        global ser
+        global input_count
+        
+        button = self.sender()
+
+        if button is None or not isinstance(button, QPushButton):
+            return
+        #print "clicked button is %s " % button.text()
+        button_str = button.text()
+
+        if button_str == u"打开调试信息":
             self.debug_button.setText(u"关闭调试信息")
-            self.DEBUG_FLAG = 1
-            return
-        if self.DEBUG_FLAG == 1:
+            cmd = '{"fun":"si24r2e_show_log","setting": "1"}'
+        if button_str == u"关闭调试信息":
             self.debug_button.setText(u"打开调试信息")
-            self.DEBUG_FLAG = 0
-            return
+            cmd = '{"fun":"si24r2e_show_log","setting": "0"}'
+
+        if ser == 0:
+            self.open_uart()
+        if ser.isOpen() == True:
+            
+            ser.write(cmd)
+            input_count = input_count + 1
+        return
 
     def yyk_update_pro(self):
         global input_count
