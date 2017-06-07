@@ -94,10 +94,10 @@ class QtqBurner(QWidget):
             "si24r2e_auto_burn":self.si24r2e_auto_burn,
             "bind_start"       :self.bind_start,
             "Error"            :self.Error,
-            "debug"            :self.debug
+            "debug"            :self.debug,
+            "brun_count"       :self.brun_count
         }
         self.DEBUG_FLAG    = 0
-        self.FILTER_FLAG   = 0
         self.setWindowTitle(u"烧录工具v0.1.1")
 
         self.com_combo=QComboBox(self)
@@ -128,7 +128,7 @@ class QtqBurner(QWidget):
         self.dtq_wiget    = QWidget()
         self.boot_button  = QPushButton(u"添加固件")
         self.boot_browser = QLineEdit()
-        self.boot_label=QLabel(u"文件:")
+        self.boot_label=QLabel(u"镜像文件:")
         self.save_button  = QPushButton(u"转换文件")
         self.burn_button = QPushButton(u"烧录")
         dtq_layout = QHBoxLayout()
@@ -141,16 +141,21 @@ class QtqBurner(QWidget):
         self.yyk_wiget = QWidget()
         self.pro_lineedit = QLineEdit()
         self.pro_label = QLabel(u"当前协议:")
+        self.burn_count_lineedit = QLineEdit()
+        self.burn_count_lineedit.setFixedSize(40, 20)
+        self.burn_count_label = QLabel(u"编程次数:")
         self.pro_label.setFixedSize(60, 20)
         self.pro_button = QPushButton(u"开始烧录")
         self.debug_button = QPushButton(u"打开调试信息")
-        self.filter_button = QPushButton(u"打开UID过滤")
+        # self.filter_button = QPushButton(u"打开UID过滤")
         yyk_layout = QHBoxLayout()
         yyk_layout.addWidget(self.pro_label)
         yyk_layout.addWidget(self.pro_lineedit)
+        yyk_layout.addWidget(self.burn_count_label)
+        yyk_layout.addWidget(self.burn_count_lineedit)
         yyk_layout.addWidget(self.pro_button)
         yyk_layout.addWidget(self.debug_button)
-        yyk_layout.addWidget(self.filter_button)
+        # yyk_layout.addWidget(self.filter_button)
 
         self.dtq_wiget.setLayout(dtq_layout)
         self.yyk_wiget.setLayout(yyk_layout)
@@ -177,7 +182,7 @@ class QtqBurner(QWidget):
         self.clear_button.clicked.connect(self.clear_text)
         self.pro_button.clicked.connect(self.yyk_update_pro)
         self.debug_button.clicked.connect(self.yyk_debug)
-        self.filter_button.clicked.connect(self.yyk_fliter)
+        # self.filter_button.clicked.connect(self.yyk_fliter)
 
         self.start_button.clicked.connect(self.band_start)
         self.save_button.clicked.connect(self.exchange_file)
@@ -250,6 +255,11 @@ class QtqBurner(QWidget):
                 self.browser.append(u"开启失败!" )
                 logging.debug(u"开启失败!" )
 
+    def brun_count(self,json_dict):
+        if json_dict.has_key(u"read_burn_count") == True:
+            read_burn_count = json_dict[u"read_burn_count"]
+            self.burn_count_lineedit.setText(read_burn_count)
+
     def Error(self,json_dict):
         if json_dict.has_key(u"description") == True:
             result = json_dict[u"description"]
@@ -259,14 +269,7 @@ class QtqBurner(QWidget):
     def debug(self,json_dict):
             data = json.dumps(json_dict)
             if self.DEBUG_FLAG == 1:
-                if self.FILTER_FLAG == 0:
-                    self.browser.append(data)
-                else:
-                    check_uid = str(self.dtq_id_lineedit.text())
-                    if json_dict.has_key(u"uid") == True:
-                        uid = json_dict[u"uid"]
-                        if check_uid == uid:
-                            self.browser.append(data)
+                 self.browser.append(data)
 
     def yyk_debug(self):
         if self.DEBUG_FLAG == 0:
@@ -276,16 +279,6 @@ class QtqBurner(QWidget):
         if self.DEBUG_FLAG == 1:
             self.debug_button.setText(u"打开调试信息")
             self.DEBUG_FLAG = 0
-            return
-
-    def yyk_fliter(self):
-        if self.FILTER_FLAG == 0:
-            self.filter_button.setText(u"关闭UID过滤")
-            self.FILTER_FLAG = 1
-            return
-        if self.FILTER_FLAG == 1:
-            self.filter_button.setText(u"打开UID过滤")
-            self.FILTER_FLAG = 0
             return
 
     def yyk_update_pro(self):
