@@ -54,11 +54,19 @@ class UartListen(QThread):
 
     def run(self):
         global ser
+        global input_count
 
         while self.working==True:
-            if ser.isOpen() == True:
-                read_char = ser.read(1)
-                recv_str  = self.ReviceFunSets[0]( read_char )
+            if input_count   >= 1:
+                try:
+                    read_char = ser.read(1)
+                except serial.SerialException:
+                    # recv_str  = self.ReviceFunSets[0]( read_char )
+                    input_count = 0
+                    recv_str = u'{"fun":"Error","description": "serialport lost!"}'
+                    pass
+                if input_count > 0:
+                    recv_str  = self.ReviceFunSets[0]( read_char )
                 if len(recv_str) > 0:
                     self.emit(SIGNAL('output(QString)'),recv_str)
 
@@ -174,14 +182,13 @@ class QtqBurner(QWidget):
         box.addLayout(e_hbox)
         box.addLayout(vbox)
         self.setLayout(box)
-        self.resize( 580, 500 )
+        self.resize( 530, 500 )
 
         self.boot_button.clicked.connect(self.choose_image_file)
         self.burn_button.clicked.connect(self.download_image)
         self.clear_button.clicked.connect(self.clear_text)
         self.pro_button.clicked.connect(self.yyk_update_pro)
         self.debug_button.clicked.connect(self.yyk_debug)
-        # self.filter_button.clicked.connect(self.yyk_fliter)
 
         self.start_button.clicked.connect(self.band_start)
         self.save_button.clicked.connect(self.exchange_file)
@@ -294,7 +301,6 @@ class QtqBurner(QWidget):
 
             if button is None or not isinstance(button, QPushButton):
                 return
-            #print "clicked button is %s " % button.text()
             button_str = button.text()
 
             if button_str == u"打开调试信息":
@@ -304,8 +310,6 @@ class QtqBurner(QWidget):
                 self.debug_button.setText(u"打开调试信息")
                 cmd = '{"fun":"si24r2e_show_log","setting": "0"}'
 
-            if ser == 0:
-                self.open_uart()
             if ser.isOpen() == True:
                 ser.write(cmd)
                 input_count = input_count + 1
@@ -327,8 +331,6 @@ class QtqBurner(QWidget):
 
             if button_str == u"开始烧录":
                 self.pro_button.setText(u"停止烧录")
-                if ser == 0:
-                    self.open_uart()
 
                 if ser.isOpen() == True:
                     cmd = '{"fun": "si24r2e_auto_burn","setting": "1","time": "%s"}' % now
@@ -339,8 +341,7 @@ class QtqBurner(QWidget):
 
             if button_str == u"停止烧录":
                 self.pro_button.setText(u"开始烧录")
-                if ser == 0:
-                    self.open_uart()
+                self.burn_count_lineedit.setText(u'')
 
                 if ser.isOpen() == True:
                     cmd = '{"fun": "si24r2e_auto_burn","setting": "0","time": "%s"}' % now
@@ -414,6 +415,7 @@ class QtqBurner(QWidget):
             self.start_button.setText(u"打开接收器")
             self.pro_button.setText(u"开始烧录")
             self.debug_button.setText(u"打开调试信息")
+            self.burn_count_lineedit.setText(u'')
             input_count = 0
             ser.close()
 
@@ -465,12 +467,15 @@ class QtqBurner(QWidget):
                 return
 
         if button_str == u"关闭接收器":
-            cmd = '{"fun": "si24r2e_auto_burn","setting": "0"}'
-            ser.write(cmd)
-            self.setting_uart(0)
-            self.browser.append(u"关闭串口!" )
-            logging.debug(u"关闭串口!" )
-            return
+            if input_count >= 1:
+                cmd = '{"fun": "si24r2e_auto_burn","setting": "0"}'
+                ser.write(cmd)
+                self.setting_uart(0)
+                self.browser.append(u"关闭串口!" )
+                logging.debug(u"关闭串口!" )
+                return
+            else:
+                self.setting_uart(0)
 
     def choose_image_file(self):
         button = self.sender()
