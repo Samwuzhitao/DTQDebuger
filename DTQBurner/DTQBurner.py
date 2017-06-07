@@ -235,11 +235,23 @@ class QtqBurner(QWidget):
         if json_dict.has_key(u"result") == True:
             result = json_dict[u"result"]
             pro_name = json_dict[u"pro_name"]
+            setting = json_dict[u"setting"]
+            debug = json_dict[u"debug"]
+            op = u''
             if result == u"0":
                 if self.pro_dict.has_key(pro_name) == True:
                     self.pro_lineedit.setText(self.pro_dict[pro_name])
-                self.browser.append(u"设置协议:[%s] 成功!" % pro_name )
-                logging.debug(u"设置协议:[%s] 成功!" % pro_name )
+                if setting == u"start":        
+                    op = u'开始烧录'
+                if setting == u"stop":   
+                    op = u'停止烧录'
+                self.browser.append(u"设置协议:[%s] 成功，%s!" % (pro_name,op) )
+                logging.debug(u"设置协议:[%s] 成功，%s!" % (pro_name,op) )
+
+                if debug == u'0':
+                    self.debug_button.setText(u"打开调试信息")
+                else:
+                    self.debug_button.setText(u"关闭调试信息")
             else:
                 self.browser.append(u"%s@设置协议:[%s] 失败!" % pro_name )
                 logging.debug(u"设置协议:[%s] 失败!" % pro_name )
@@ -300,7 +312,6 @@ class QtqBurner(QWidget):
         if ser == 0:
             self.open_uart()
         if ser.isOpen() == True:
-            
             ser.write(cmd)
             input_count = input_count + 1
         return
@@ -311,16 +322,36 @@ class QtqBurner(QWidget):
 
         ISOTIMEFORMAT = '%Y-%m-%d %H:%M:%S'
         now = time.strftime( ISOTIMEFORMAT,time.localtime(time.time()))
+        button = self.sender()
 
-        if ser == 0:
-            self.open_uart()
+        if button is None or not isinstance(button, QPushButton):
+            return
+        #print "clicked button is %s " % button.text()
+        button_str = button.text()
 
-        if ser.isOpen() == True:
-            cmd = '{"fun": "si24r2e_auto_burn","setting": "1","time": "%s"}' % now
-            ser.write(cmd)
-            input_count = input_count + 1
-            data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
-            # self.browser.append(data )
+        if button_str == u"开始烧录":
+            self.pro_button.setText(u"停止烧录")
+            if ser == 0:
+                self.open_uart()
+
+            if ser.isOpen() == True:
+                cmd = '{"fun": "si24r2e_auto_burn","setting": "1","time": "%s"}' % now
+                ser.write(cmd)
+                input_count = input_count + 1
+                data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
+            return
+        
+        if button_str == u"停止烧录":
+            self.pro_button.setText(u"开始烧录")
+            if ser == 0:
+                self.open_uart()
+
+            if ser.isOpen() == True:
+                cmd = '{"fun": "si24r2e_auto_burn","setting": "0","time": "%s"}' % now
+                ser.write(cmd)
+                input_count = input_count + 1
+                data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
+            return
 
     def update_time(self):
         self.time_lineedit.setText(time.strftime(
