@@ -70,17 +70,33 @@ class UartListen(QThread):
                 if len(recv_str) > 0:
                     self.emit(SIGNAL('output(QString)'),recv_str)
 
+class LogResult():
+    def __init__(self, parent=None):
+        self.burn_sum_count  = 0
+        self.card_ok_count   = 0
+        self.card_fail_count = 0
+        self.rssi_ok_count   = 0
+        self.rssi_fail_count = 0
+
+    def clear(self):
+        self.burn_sum_count  = 0
+        self.card_ok_count   = 0
+        self.card_fail_count = 0
+        self.rssi_ok_count   = 0
+        self.rssi_fail_count = 0
+
 class QtqBurner(QWidget):
     def __init__(self, parent=None):
         global ser
 
         super(QtqBurner, self).__init__(parent)
-        input_count = 0
-        self.ports_dict = {}
+        input_count         = 0
+        self.logresult      = LogResult()
+        self.ports_dict     = {}
         self.dtq_image_path = ''
         self.new_image_path = ''
         self.dtq_id         = ''
-        self.pro_dict = {
+        self.pro_dict       = {
             u'ZKXL'    :u'中科讯联（我司）',
             u'JXYD'    :u'江西移动',
             u'CQYD'    :u'重庆移动',
@@ -107,7 +123,6 @@ class QtqBurner(QWidget):
             "si24r2e_show_log" :self.show_log,
             "system_init"      :self.system_init
         }
-        self.DEBUG_FLAG    = 0
         self.setWindowTitle(u"烧录工具v0.1.2")
 
         self.com_combo=QComboBox(self)
@@ -213,18 +228,20 @@ class QtqBurner(QWidget):
             pro_name = json_dict[u"pro_name"]
             self.dtq_id = json_dict[u"card_id"]
             self.dtq_id_lineedit.setText(self.dtq_id)
+            show_str = ""
             if result == u"0":
-                self.browser.append(u"%s@UID:[%s] 卡片配置成功！" % (pro_name,self.dtq_id))
-                logging.debug(u"%s@UID:[%s] 卡片配置成功！" % (pro_name,self.dtq_id))
+                show_str = u"%s@UID:[%s] 卡片配置成功！" % (pro_name,self.dtq_id)
+                self.logresult.card_ok_count = self.logresult.card_ok_count + 1
+            else:
+                self.logresult.card_fail_count = self.logresult.card_fail_count + 1
             if result == u"-1":
-                self.browser.append(u"%s@UID:[%s] 卡片配置失败:烧写失败！" % (pro_name,self.dtq_id))
-                logging.debug(u"%s@UID:[%s] 卡片配置失败:烧写失败！" % (pro_name,self.dtq_id))
+                show_str = u"%s@UID:[%s] 卡片配置失败:烧写失败！" % (pro_name,self.dtq_id)
             if result == u"-2":
-                self.browser.append(u"%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id))
-                logging.debug(u"%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id))
+                show_str = u"%s@UID:[%s] 卡片配置失败:烧写次数达到上限！" % (pro_name,self.dtq_id)
             if result == u"-3":
-                self.browser.append(u"%s@UID:[%s] 卡片配置失败:管脚松动，请接好线！" % (pro_name,self.dtq_id))
-                logging.debug(u"%s@UID:[%s] 卡片配置失败:管脚松动，请接好线！" % (pro_name,self.dtq_id))
+                show_str = u"%s@UID:[%s] 卡片配置失败:管脚松动，请接好线！" % (pro_name,self.dtq_id)
+            self.browser.append(show_str)
+            self.logresult.burn_sum_count = self.logresult.burn_sum_count + 1 
 
     def rssi_check(self,json_dict):
         if json_dict.has_key(u"result") == True:
@@ -232,12 +249,18 @@ class QtqBurner(QWidget):
             rssi   = json_dict[u"check_rssi"]
             self.dtq_id = json_dict[u"card_id"]
             pro_name = json_dict[u"pro_name"]
+            show_str = ""
             if result == u"0":
-                self.browser.append(u"%s@UID:[%s] RSSI校验成功！RSSI = %s" % (pro_name,self.dtq_id,rssi))
-                logging.debug(u"%s@UID:[%s] RSSI校验成功！RSSI = %s" % (pro_name,self.dtq_id,rssi))
+                show_str = u"%s@UID:[%s] RSSI校验成功！RSSI = %s" % (pro_name,self.dtq_id,rssi)
+                self.logresult.rssi_ok_count = self.logresult.rssi_ok_count + 1   
             else:
-                self.browser.append(u"%s@UID:[%s] RSSI校验失败！" % (pro_name,self.dtq_id))
-                logging.debug(u"%s@UID:[%s] RSSI校验失败！" % (pro_name,self.dtq_id))
+                show_str = u"%s@UID:[%s] RSSI校验失败！" % (pro_name,self.dtq_id)
+                self.logresult.rssi_fail_count = self.logresult.rssi_fail_count + 1
+            self.browser.append(show_str)
+            result_str = u"ID:【%s】 RSSI: %s SUM:%-8d SET_CARD:[OK:%-8d FIAL:%-8d] RSSI_CHECK:[ OK:%-8d FIAL:%-8d]" % \
+                (self.dtq_id,rssi,self.logresult.burn_sum_count,self.logresult.card_ok_count,          \
+                 self.logresult.card_fail_count,self.logresult.rssi_ok_count,self.logresult.rssi_fail_count)
+            logging.debug(result_str)
 
     def si24r2e_auto_burn(self,json_dict):
         if json_dict.has_key(u"result") == True:
@@ -526,8 +549,14 @@ class QtqBurner(QWidget):
         logging.debug(u"DTQ@UID:[%s] 烧写成功！" % id_str )
 
 if __name__=='__main__':
+
     app = QApplication(sys.argv)
     datburner = QtqBurner()
     datburner.show()
     app.exec_()
+    cmd = '{"fun": "si24r2e_auto_burn","setting": "0"}'
+    ser.write(cmd)
+    datburner.setting_uart(0)
+
+
 
