@@ -242,6 +242,7 @@ class QtqBurner(QWidget):
                 show_str = u"%s@UID:[%s] 卡片配置失败:管脚松动，请接好线！" % (pro_name,self.dtq_id)
             self.browser.append(show_str)
             self.logresult.burn_sum_count = self.logresult.burn_sum_count + 1 
+            logging.debug( show_str )
 
     def rssi_check(self,json_dict):
         if json_dict.has_key(u"result") == True:
@@ -257,9 +258,7 @@ class QtqBurner(QWidget):
                 show_str = u"%s@UID:[%s] RSSI校验失败！" % (pro_name,self.dtq_id)
                 self.logresult.rssi_fail_count = self.logresult.rssi_fail_count + 1
             self.browser.append(show_str)
-            result_str = u"ID:【%s】 RSSI: %s SUM:%-8d SET_CARD:[OK:%-8d FIAL:%-8d] RSSI_CHECK:[ OK:%-8d FIAL:%-8d]" % \
-                (self.dtq_id,rssi,self.logresult.burn_sum_count,self.logresult.card_ok_count,          \
-                 self.logresult.card_fail_count,self.logresult.rssi_ok_count,self.logresult.rssi_fail_count)
+            result_str = u"ID:【%s】 RSSI: %s SET_CARD:OK RSSI_CHECK:%s" %  (self.dtq_id,rssi,result)
             logging.debug(result_str)
 
     def si24r2e_auto_burn(self,json_dict):
@@ -298,16 +297,17 @@ class QtqBurner(QWidget):
         if json_dict.has_key(u"operation") == True:
             operation = json_dict[u"operation"]
             show_str = ""
-            if operation == u"rd":
-               if json_dict.has_key(u"read_nvm_data") == True: 
+            if json_dict.has_key(u"read_nvm_data") == True: 
                 read_nvm_data = json_dict[u"read_nvm_data"]
                 read_burn_count = json_dict[u"read_burn_count"]
                 show_str = u"读出配置：burn_count：%s read_data:%s" % \
                 (read_burn_count,read_nvm_data )
+                self.browser.append( show_str )
+                logging.debug( show_str )
             if operation == u"wr":
-                show_str = u"比较需要写入的配置：不一致,写入新配置" 
-            self.browser.append( show_str )
-            logging.debug( show_str )
+                show_str = u"比较配置不一致,重新写入配置" 
+                self.browser.append( show_str )
+                logging.debug( show_str )
 
         if json_dict.has_key(u"read_burn_count") == True:
             read_burn_count = json_dict[u"read_burn_count"]
@@ -563,7 +563,6 @@ class QtqBurner(QWidget):
         logging.debug(u"DTQ@UID:[%s] 烧写成功！" % id_str )
 
 if __name__=='__main__':
-
     app = QApplication(sys.argv)
     datburner = QtqBurner()
     datburner.show()
@@ -571,6 +570,11 @@ if __name__=='__main__':
     cmd = '{"fun": "si24r2e_auto_burn","setting": "0"}'
     ser.write(cmd)
     datburner.setting_uart(0)
+    result_str = u"SUM:%-8d SET_CARD:[OK:%-8d FIAL:%-8d] RSSI_CHECK:[ OK:%-8d FIAL:%-8d]" % \
+                (datburner.logresult.burn_sum_count,datburner.logresult.card_ok_count,      \
+                 datburner.logresult.card_fail_count,                                       \
+                 datburner.logresult.rssi_ok_count,datburner.logresult.rssi_fail_count)
+    logging.debug(result_str)
 
 
 
