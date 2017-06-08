@@ -104,7 +104,8 @@ class QtqBurner(QWidget):
             "Error"            :self.Error,
             "debug"            :self.debug,
             "brun_count"       :self.brun_count,
-            "si24r2e_show_log" :self.show_log
+            "si24r2e_show_log" :self.show_log,
+            "system_init"      :self.system_init
         }
         self.DEBUG_FLAG    = 0
         self.setWindowTitle(u"烧录工具v0.1.2")
@@ -324,10 +325,10 @@ class QtqBurner(QWidget):
             now = time.strftime( ISOTIMEFORMAT,time.localtime(time.time()))
             button = self.sender()
 
-            if button is None or not isinstance(button, QPushButton):
-                return
+            # if button is None or not isinstance(button, QPushButton):
+                # return
             #print "clicked button is %s " % button.text()
-            button_str = button.text()
+            button_str = self.pro_button.text()
 
             if button_str == u"开始烧录":
                 self.pro_button.setText(u"停止烧录")
@@ -349,6 +350,17 @@ class QtqBurner(QWidget):
                     input_count = input_count + 1
                     data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
                 return
+
+    def system_init(self,json_dict):
+        if json_dict.has_key(u"status") == True:
+            status = json_dict[u"status"]
+            self.start_button.setText(u"打开接收器")
+            self.pro_button.setText(u"开始烧录")
+            self.debug_button.setText(u"打开调试信息")
+            self.burn_count_lineedit.setText(u'')
+            input_count = 0
+            self.browser.append(u"系统初始化，初始化结果:%s" % status )
+            logging.debug(u"系统初始化，初始化结果:%s" % status )
 
     def update_time(self):
         self.time_lineedit.setText(time.strftime(
