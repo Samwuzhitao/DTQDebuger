@@ -297,11 +297,15 @@ class QtqBurner(QWidget):
     def nvm_opration(self,json_dict):
         if json_dict.has_key(u"operation") == True:
             operation = json_dict[u"operation"]
-            show_str = u"配置操作:%s" % operation
+            show_str = ""
             if operation == u"rd":
                if json_dict.has_key(u"read_nvm_data") == True: 
                 read_nvm_data = json_dict[u"read_nvm_data"]
-                show_str = show_str + u" DATA:%s" % (read_nvm_data )
+                read_burn_count = json_dict[u"read_burn_count"]
+                show_str = u"读出配置：burn_count：%s read_data:%s" % \
+                (read_burn_count,read_nvm_data )
+            if operation == u"wr":
+                show_str = u"比较需要写入的配置：不一致,写入新配置" 
             self.browser.append( show_str )
             logging.debug( show_str )
 
