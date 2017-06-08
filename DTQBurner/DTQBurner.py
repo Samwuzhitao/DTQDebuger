@@ -119,7 +119,7 @@ class QtqBurner(QWidget):
             "bind_start"       :self.bind_start,
             "Error"            :self.Error,
             "debug"            :self.debug,
-            "brun_count"       :self.brun_count,
+            "nvm_opration"     :self.nvm_opration,
             "si24r2e_show_log" :self.show_log,
             "system_init"      :self.system_init
         }
@@ -294,7 +294,17 @@ class QtqBurner(QWidget):
                 self.browser.append(u"打开串口!" )
                 logging.debug(u"打开串口!" )
 
-    def brun_count(self,json_dict):
+    def nvm_opration(self,json_dict):
+        if json_dict.has_key(u"operation") == True:
+            operation = json_dict[u"operation"]
+            show_str = u"配置操作:%s" % operation
+            if operation == u"rd":
+               if json_dict.has_key(u"read_nvm_data") == True: 
+                read_nvm_data = json_dict[u"read_nvm_data"]
+                show_str = show_str + u" DATA:%s" % (read_nvm_data )
+            self.browser.append( show_str )
+            logging.debug( show_str )
+
         if json_dict.has_key(u"read_burn_count") == True:
             read_burn_count = json_dict[u"read_burn_count"]
             self.burn_count_lineedit.setText(read_burn_count)
