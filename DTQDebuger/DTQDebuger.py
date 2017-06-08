@@ -239,7 +239,6 @@ class DtqDebuger(QWidget):
         self.hex_cmd_dict[u'DTQ 自检'] = u"暂无功能"
         self.hex_cmd_dict[u'开启考勤'] = "5C 25 00 00 00 00 00 25 CA"
         self.hex_cmd_dict[u'停止考勤'] = "5C 27 00 00 00 00 00 27 CA"
-
         self.open_com_button=QPushButton(u"打开串口")
         self.open_com_button.setFixedSize(75, 20) 
         self.com_combo=QComboBox(self) 
@@ -249,7 +248,6 @@ class DtqDebuger(QWidget):
         self.baudrate_label=QLabel(u"波特率：") 
         self.baudrate_label.setFixedSize(60, 20)
         self.baudrate_lineedit = QLineEdit(u'1152000')
-        self.baudrate_lineedit.setFixedSize(50, 20)
         self.baudrate_unit_label=QLabel(u"bps ") 
         self.baudrate_unit_label.setFixedSize(20, 20)
 
@@ -258,6 +256,9 @@ class DtqDebuger(QWidget):
         self.display_combo.addItem(u'16进制')
         self.display_combo.addItem(u'字符串')
         self.display_combo.setFixedSize(60, 20)
+        self.display_combo.setStyleSheet(
+            "QComboBox{border:1px solid lightgray;background:rgb(230,230,230)}"
+            "QComboBox:hover{border-color:green;}")
         self.display_combo.setCurrentIndex(self.display_combo.
             findText(u'字符串'))
         self.protocol_label=QLabel(u"协议版本：")
@@ -265,13 +266,16 @@ class DtqDebuger(QWidget):
         self.protocol_combo.addItem(u'JSON')
         self.protocol_combo.addItem(u'HEX')
         self.protocol_combo.setFixedSize(60, 20)
+        self.protocol_combo.setStyleSheet(
+            "QComboBox{border:1px solid lightgray;background:rgb(230,230,230)}"
+            "QComboBox:hover{border-color:green;}")
         self.clear_revice_button=QPushButton(u"清空数据")
         self.clear_revice_button.setCheckable(False)
         self.clear_revice_button.setAutoExclusive(False)
         self.clear_revice_button.setFixedSize(75, 20)
         self.clear_revice_button.setStyleSheet(
             "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
-            "QPushButton:hover{border-color:green;background:transparent}")
+            "QPushButton:hover{border-color:green;}")
 
         self.send_cmd_combo=QComboBox(self) 
         for key in self.json_cmd_dict:
@@ -279,6 +283,9 @@ class DtqDebuger(QWidget):
         self.send_cmd_combo.setCurrentIndex(self.send_cmd_combo.
             findText(u'设备信息'))
         self.send_cmd_combo.setFixedSize(75, 40)
+        self.send_cmd_combo.setStyleSheet(
+            "QComboBox{border:1px solid lightgray;background:rgb(230,230,230)}"
+            "QComboBox:hover{border-color:green;}")
 
         self.send_lineedit = QTextEdit(u"修改或者输入指令！")
         self.send_lineedit.setFixedHeight(40)
@@ -288,7 +295,7 @@ class DtqDebuger(QWidget):
         self.send_lineedit_button.setFixedSize(75, 40)
         self.send_lineedit_button.setStyleSheet(
             "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
-            "QPushButton:hover{border-color:green;background:transparent}")
+            "QPushButton:hover{border-color:green;}")
 
         self.browser = QTextBrowser ()
         self.auto_send_chackbox = QCheckBox(u"自动发送") 
@@ -300,17 +307,16 @@ class DtqDebuger(QWidget):
         self.send_time_label=QLabel(u"发送周期：") 
         self.send_time_label.setFixedSize(60, 20)
         self.send_time_lineedit = QLineEdit(u'4000')
-        self.send_time_lineedit.setFixedSize(50, 20)
         self.send_time_unit_label=QLabel(u"ms ") 
         self.send_time_unit_label.setFixedSize(20, 20)
 
-        self.update_fm_button=QPushButton(u"升级程序")
+        self.update_fm_button=QPushButton(u"加载协议")
         self.update_fm_button.setCheckable(False)
         self.update_fm_button.setAutoExclusive(False)
         self.update_fm_button.setFixedSize(75, 20)
         self.update_fm_button.setStyleSheet(
             "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
-            "QPushButton:hover{border-color:green;background:transparent}")
+            "QPushButton:hover{border-color:green;}")
 
         c_hbox = QHBoxLayout()
         c_hbox.addWidget(self.com_combo)
@@ -340,34 +346,50 @@ class DtqDebuger(QWidget):
         self.image_button = QPushButton(u"添加固件")
         self.image_button.setCheckable(False)
         self.image_button.setAutoExclusive(False)
-        self.image_button.setFixedSize(75, 20)
+        self.image_button.setFixedSize(60, 20)
         self.image_button.setStyleSheet(
             "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
-            "QPushButton:hover{border-color:green;background:transparent}")
+            "QPushButton:hover{border-color:green;}")
+        self.burn_button  = QPushButton(u"烧写固件")
+        self.burn_button.setCheckable(False)
+        self.burn_button.setAutoExclusive(False)
+        self.burn_button.setFixedSize(75, 20)
+        self.burn_button.setStyleSheet(
+            "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
+            "QPushButton:hover{border-color:green;}")
         self.image_browser = QLineEdit()
         self.image_browser.setFixedHeight(20)
-        self.image_label=QLabel(u"程序固件：")
+        self.image_label=QLabel(u"固件路径：")
         self.image_label.setFixedSize(75, 20)
         i_hbox = QHBoxLayout()
         i_hbox.addWidget(self.image_label)
         i_hbox.addWidget(self.image_browser)
         i_hbox.addWidget(self.image_button)
+        i_hbox.addWidget(self.burn_button)
 
         self.script_button = QPushButton(u"添加脚本")
         self.script_button.setCheckable(False)
         self.script_button.setAutoExclusive(False)
-        self.script_button.setFixedSize(75, 20)
+        self.script_button.setFixedSize(60, 20)
         self.script_button.setStyleSheet(
             "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
-            "QPushButton:hover{border-color:green;background:transparent}")
+            "QPushButton:hover{border-color:green;}")
+        self.run_button    = QPushButton(u"执行脚本")
+        self.run_button.setCheckable(False)
+        self.run_button.setAutoExclusive(False)
+        self.run_button.setFixedSize(75, 20)
+        self.run_button.setStyleSheet(
+            "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
+            "QPushButton:hover{border-color:green;}")
         self.script_browser = QLineEdit()
         self.script_browser.setFixedHeight(20)
-        self.script_label=QLabel(u"指令脚本：")
+        self.script_label=QLabel(u"脚本路径：")
         self.script_label.setFixedSize(75, 20)
         s_hbox = QHBoxLayout()
         s_hbox.addWidget(self.script_label)
         s_hbox.addWidget(self.script_browser)
         s_hbox.addWidget(self.script_button)
+        s_hbox.addWidget(self.run_button)
 
         vbox = QVBoxLayout()
         vbox.addLayout(c_hbox)
@@ -380,7 +402,6 @@ class DtqDebuger(QWidget):
         self.setLayout(vbox)
 
         self.resize( 540, 500 )
-        self.setFixedWidth( 540 )
         self.send_lineedit.setFocus()
         self.send_lineedit.setFont(QFont("Courier New", 8, False))
 
