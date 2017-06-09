@@ -381,6 +381,7 @@ class QtqBurner(QWidget):
             if button_str == u"停止烧录":
                 self.pro_button.setText(u"开始烧录")
                 self.burn_count_lineedit.setText(u'')
+                self.show_log_result()
 
                 if ser.isOpen() == True:
                     cmd = '{"fun": "si24r2e_auto_burn","setting": "0","time": "%s"}' % now
@@ -523,6 +524,7 @@ class QtqBurner(QWidget):
                 self.setting_uart(0)
                 self.browser.append(u"关闭串口!" )
                 logging.debug(u"关闭串口!" )
+                self.show_log_result()
                 return
             else:
                 self.setting_uart(0)
@@ -563,6 +565,16 @@ class QtqBurner(QWidget):
         self.browser.append(u"DTQ@UID:[%s] 烧写成功！" % id_str )
         logging.debug(u"DTQ@UID:[%s] 烧写成功！" % id_str )
 
+    def show_log_result(self):
+        logging.debug(u"=======================================================================")
+        logging.debug(u"烧录结果统计:")
+        logging.debug(u"总共烧录次数:%d" % datburner.logresult.burn_sum_count )
+        logging.debug(u"卡片配置结果:成功=%-10d 失败=%-10d" % (datburner.logresult.card_ok_count,\
+                                                     datburner.logresult.card_fail_count ))
+        logging.debug(u"RSSI检验结果:成功=%-10d 失败=%-10d" % (datburner.logresult.rssi_ok_count,\
+                                                     datburner.logresult.rssi_fail_count ))
+        logging.debug(u"=======================================================================")
+
 if __name__=='__main__':
     app = QApplication(sys.argv)
     datburner = QtqBurner()
@@ -571,13 +583,7 @@ if __name__=='__main__':
     cmd = '{"fun": "si24r2e_auto_burn","setting": "0"}'
     ser.write(cmd)
     datburner.setting_uart(0)
-    logging.debug(u"=======================================================================")
-    logging.debug(u"烧录结果统计:")
-    logging.debug(u"总共烧录次数:%d" % datburner.logresult.burn_sum_count )
-    logging.debug(u"卡片配置结果:成功=%-10d 失败=%-10d" % (datburner.logresult.card_ok_count,\
-                                                 datburner.logresult.card_fail_count ))
-    logging.debug(u"RSSI检验结果:成功=%-10d 失败=%-10d" % (datburner.logresult.rssi_ok_count,\
-                                                 datburner.logresult.rssi_fail_count ))
-    logging.debug(u"=======================================================================")
+    datburner.show_log_result()
+
 
 
