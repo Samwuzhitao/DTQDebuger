@@ -235,9 +235,9 @@ class QtqBurner(QWidget):
             else:
                 self.logresult.card_fail_count = self.logresult.card_fail_count + 1
             if result == u"-1":
-                show_str = u"%s@UID:[%s] CARD_SET  :失败！失败类型：烧写失败" % (pro_name,self.dtq_id)
+                show_str = u"%s@UID:[%s] CARD_SET  :失败！失败类型：烧写失败!" % (pro_name,self.dtq_id)
             if result == u"-2":
-                show_str = u"%s@UID:[%s] CARD_SET  :失败！失败类型：烧写次数达到上限" % (pro_name,self.dtq_id)
+                show_str = u"%s@UID:[%s] CARD_SET  :失败！失败类型：烧写次数满！" % (pro_name,self.dtq_id)
             if result == u"-3":
                 show_str = u"%s@UID:[%s] CARD_SET  :失败！失败类型：管脚松动！" % (pro_name,self.dtq_id)
             self.browser.append(show_str)
