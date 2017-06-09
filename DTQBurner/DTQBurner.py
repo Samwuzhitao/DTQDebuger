@@ -62,12 +62,14 @@ class UartListen(QThread):
                     read_char = ser.read(1)
                 except serial.SerialException:
                     # recv_str  = self.ReviceFunSets[0]( read_char )
+                    # print "xxxxxxxxxxxxxxxxxxxxxxxx"
                     input_count = 0
-                    recv_str = u'{"fun":"Error","description": "serialport lost!"}'
+                    cmd = u'{"fun":"Error","description":"serialport lost!"}'
+                    recv_str = u"R[%d]: %s" % (input_count-1,cmd)
                     pass
                 if input_count > 0:
                     recv_str  = self.ReviceFunSets[0]( read_char )
-                if len(recv_str) > 0:
+                if recv_str :
                     self.emit(SIGNAL('output(QString)'),recv_str)
 
 class LogResult():
@@ -316,7 +318,6 @@ class QtqBurner(QWidget):
             self.burn_count_lineedit.setText(read_burn_count)
 
     def Error(self,json_dict):
-        print json_dict
         if json_dict.has_key(u"description") == True:
             result = json_dict[u"description"]
             self.browser.append(u"错误类型:%s" % result )
