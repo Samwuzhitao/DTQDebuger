@@ -230,16 +230,16 @@ class QtqBurner(QWidget):
             self.dtq_id_lineedit.setText(self.dtq_id)
             show_str = ""
             if result == u"0":
-                show_str = u"%s@UID:[%s] CARD_SET:成功！" % (pro_name,self.dtq_id)
+                show_str = u"%s@UID:[%s] CARD_SET  :成功！" % (pro_name,self.dtq_id)
                 self.logresult.card_ok_count = self.logresult.card_ok_count + 1
             else:
                 self.logresult.card_fail_count = self.logresult.card_fail_count + 1
             if result == u"-1":
-                show_str = u"%s@UID:[%s] CARD_SET:失败！失败类型：烧写失败" % (pro_name,self.dtq_id)
+                show_str = u"%s@UID:[%s] CARD_SET  :失败！失败类型：烧写失败" % (pro_name,self.dtq_id)
             if result == u"-2":
-                show_str = u"%s@UID:[%s] CARD_SET:失败！失败类型：烧写次数达到上限" % (pro_name,self.dtq_id)
+                show_str = u"%s@UID:[%s] CARD_SET  :失败！失败类型：烧写次数达到上限" % (pro_name,self.dtq_id)
             if result == u"-3":
-                show_str = u"%s@UID:[%s] CARD_SET:失败！失败类型：管脚松动！" % (pro_name,self.dtq_id)
+                show_str = u"%s@UID:[%s] CARD_SET  :失败！失败类型：管脚松动！" % (pro_name,self.dtq_id)
             self.browser.append(show_str)
             self.logresult.burn_sum_count = self.logresult.burn_sum_count + 1 
             logging.debug( show_str )
@@ -273,8 +273,10 @@ class QtqBurner(QWidget):
                     self.pro_lineedit.setText(self.pro_dict[pro_name])
                 if setting == u"start":        
                     op = u'开始烧录'
+                    self.pro_button.setText(u'停止烧录')
                 if setting == u"stop":   
                     op = u'停止烧录'
+                    self.pro_button.setText(u'开始烧录')
                 self.browser.append(u"设置协议:[%s] 成功，%s!" % (pro_name,op) )
                 logging.debug(u"设置协议:[%s] 成功，%s!" % (pro_name,op) )
 
@@ -314,10 +316,17 @@ class QtqBurner(QWidget):
             self.burn_count_lineedit.setText(read_burn_count)
 
     def Error(self,json_dict):
+        print json_dict
         if json_dict.has_key(u"description") == True:
             result = json_dict[u"description"]
             self.browser.append(u"错误类型:%s" % result )
             logging.debug(u"错误类型:%s" % result )
+            if result == "serialport lost!":
+                self.start_button.setText(u"打开接收器")
+                self.pro_button.setText(u"开始烧录")
+                self.debug_button.setText(u"打开调试信息")
+                self.burn_count_lineedit.setText(u'')
+                self.show_log_result()
 
     def debug(self,json_dict):
         data = json.dumps(json_dict)
@@ -363,14 +372,9 @@ class QtqBurner(QWidget):
             now = time.strftime( ISOTIMEFORMAT,time.localtime(time.time()))
             button = self.sender()
 
-            # if button is None or not isinstance(button, QPushButton):
-                # return
-            #print "clicked button is %s " % button.text()
             button_str = self.pro_button.text()
 
             if button_str == u"开始烧录":
-                self.pro_button.setText(u"停止烧录")
-
                 if ser.isOpen() == True:
                     cmd = '{"fun": "si24r2e_auto_burn","setting": "1","time": "%s"}' % now
                     ser.write(cmd)
@@ -379,7 +383,6 @@ class QtqBurner(QWidget):
                 return
 
             if button_str == u"停止烧录":
-                self.pro_button.setText(u"开始烧录")
                 self.burn_count_lineedit.setText(u'')
                 self.show_log_result()
 
@@ -566,14 +569,26 @@ class QtqBurner(QWidget):
         logging.debug(u"DTQ@UID:[%s] 烧写成功！" % id_str )
 
     def show_log_result(self):
-        logging.debug(u"=======================================================================")
-        logging.debug(u"烧录结果统计:")
-        logging.debug(u"总共烧录次数:%d" % datburner.logresult.burn_sum_count )
-        logging.debug(u"卡片配置结果:成功=%-10d 失败=%-10d" % (datburner.logresult.card_ok_count,\
-                                                     datburner.logresult.card_fail_count ))
-        logging.debug(u"RSSI检验结果:成功=%-10d 失败=%-10d" % (datburner.logresult.rssi_ok_count,\
-                                                     datburner.logresult.rssi_fail_count ))
-        logging.debug(u"=======================================================================")
+        show_str = u"============================================================"
+        logging.debug( show_str )
+        self.browser.append( show_str )
+        show_str = u"烧录结果统计:"
+        logging.debug( show_str )
+        self.browser.append( show_str )
+        show_str = u"总共烧录次数:%d" % datburner.logresult.burn_sum_count
+        logging.debug( show_str )
+        self.browser.append( show_str )
+        show_str = u"CARD配置结果:成功=%-10d 失败=%-10d" % (datburner.logresult.card_ok_count,\
+                                                         datburner.logresult.card_fail_count )
+        logging.debug( show_str )
+        self.browser.append( show_str )
+        show_str = u"RSSI检验结果:成功=%-10d 失败=%-10d" % (datburner.logresult.rssi_ok_count,\
+                                                     datburner.logresult.rssi_fail_count )
+        logging.debug( show_str )
+        self.browser.append( show_str )
+        show_str = u"============================================================"
+        logging.debug( show_str )
+        self.browser.append( show_str )
 
 if __name__=='__main__':
     app = QApplication(sys.argv)
@@ -581,9 +596,13 @@ if __name__=='__main__':
     datburner.show()
     app.exec_()
     cmd = '{"fun": "si24r2e_auto_burn","setting": "0"}'
-    ser.write(cmd)
-    datburner.setting_uart(0)
-    datburner.show_log_result()
+    if ser != 0:
+        try:
+            ser.write(cmd)
+        except serial.SerialException:
+            pass
+        datburner.setting_uart(0)
+        datburner.show_log_result()
 
 
 
