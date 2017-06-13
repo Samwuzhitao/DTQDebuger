@@ -35,11 +35,11 @@ logging.basicConfig ( # 配置日志输出的方式及格式
     format = u'【%(asctime)s】 %(filename)s [line:%(lineno)d] %(levelname)s %(message)s',
 )
 
-class UartListen(QThread): 
-    def __init__(self,parent=None): 
-        super(UartListen,self).__init__(parent) 
-        self.working  = True 
-        self.num      = 0 
+class UartListen(QThread):
+    def __init__(self,parent=None):
+        super(UartListen,self).__init__(parent)
+        self.working  = True
+        self.num      = 0
         self.info_str = ''
         self.hex_revice    = HexDecode()
         self.json_revice   = JsonDecode()
@@ -55,8 +55,8 @@ class UartListen(QThread):
             1:self.hex_revice.r_machine,
         }
 
-    def __del__(self): 
-        self.working=False 
+    def __del__(self):
+        self.working=False
         self.wait()
 
     def uart_down_load_image_0(self,read_char):
@@ -90,7 +90,7 @@ class UartListen(QThread):
         if char == '0A':
             recv_str = self.info_str
             self.info_str = ''
-  
+
         if char == '43':
             retuen_flag = 2
             recv_str = u"STEP[1]:建立连接成功..."
@@ -103,7 +103,7 @@ class UartListen(QThread):
 
         recv_str = ""
         retuen_flag = 2
-        
+
         if read_char == 'C':
             recv_str = u"STEP[2]:发送镜像信息..."
 
@@ -118,7 +118,7 @@ class UartListen(QThread):
                 ser.write(data)
             else:
                 recv_str = u"ERROR:文件内容为空！"
-                ser.write('a') 
+                ser.write('a')
                 retuen_flag = 0
 
         return retuen_flag,recv_str
@@ -131,13 +131,13 @@ class UartListen(QThread):
         char = "%02X" % ord(read_char)
         if self.bin_decode.over == 3:
             self.info_str += read_char
-            #print self.info_str 
+            #print self.info_str
             if char == '0A':
                 recv_str = self.info_str
                 self.info_str = ''
                 if recv_str[0:5] == 'Start':
                     retuen_flag = 0
-                    self.bin_decode.clear() 
+                    self.bin_decode.clear()
 
         #print "%s self.bin_decode.over = %d" % (char,self.bin_decode.over)
         if char == '06':
@@ -146,7 +146,7 @@ class UartListen(QThread):
             temp_str = int(revice_rate / 2.5)*'#' + (40-int(revice_rate / 2.5))*' '
 
             recv_str = u"STEP[3]:传输镜像文件：%s %3d%%" % (temp_str,revice_rate)
-   
+
             if self.bin_decode.over == 0:
                 ser.write(self.bin_decode.stx_pac())
 
@@ -159,10 +159,10 @@ class UartListen(QThread):
 
         if char == '43':
             #recv_str = u"reviceed CRC..."
-            if self.bin_decode.over >= 2:    
+            if self.bin_decode.over >= 2:
                 ser.write(self.bin_decode.soh_pac_empty())
                 self.bin_decode.over = 3
-               
+
         if char == '15':
             recv_str = u"接收到 NACK..."
 
@@ -171,11 +171,11 @@ class UartListen(QThread):
 
         return retuen_flag,recv_str
 
-    def run(self): 
+    def run(self):
         global ser
         global down_load_image_flag
 
-        while self.working==True: 
+        while self.working==True:
             if ser.isOpen() == True:
                 read_char = ser.read(1)
 
@@ -240,19 +240,19 @@ class DtqDebuger(QWidget):
         self.hex_cmd_dict[u'开启考勤'] = "5C 25 00 00 00 00 00 25 CA"
         self.hex_cmd_dict[u'停止考勤'] = "5C 27 00 00 00 00 00 27 CA"
         self.open_com_button=QPushButton(u"打开串口")
-        self.open_com_button.setFixedSize(75, 20) 
-        self.com_combo=QComboBox(self) 
+        self.open_com_button.setFixedSize(75, 20)
+        self.com_combo=QComboBox(self)
         self.com_combo.setFixedSize(75, 20)
         self.uart_scan()
 
-        self.baudrate_label=QLabel(u"波特率：") 
+        self.baudrate_label=QLabel(u"波特率：")
         self.baudrate_label.setFixedSize(60, 20)
         self.baudrate_lineedit = QLineEdit(u'1152000')
-        self.baudrate_unit_label=QLabel(u"bps ") 
+        self.baudrate_unit_label=QLabel(u"bps ")
         self.baudrate_unit_label.setFixedSize(20, 20)
 
         self.displaystyle_label=QLabel(u"接收显示：")
-        self.display_combo=QComboBox(self) 
+        self.display_combo=QComboBox(self)
         self.display_combo.addItem(u'16进制')
         self.display_combo.addItem(u'字符串')
         self.display_combo.setFixedSize(60, 20)
@@ -262,7 +262,7 @@ class DtqDebuger(QWidget):
         self.display_combo.setCurrentIndex(self.display_combo.
             findText(u'字符串'))
         self.protocol_label=QLabel(u"协议版本：")
-        self.protocol_combo=QComboBox(self) 
+        self.protocol_combo=QComboBox(self)
         self.protocol_combo.addItem(u'JSON')
         self.protocol_combo.addItem(u'HEX')
         self.protocol_combo.setFixedSize(60, 20)
@@ -277,7 +277,7 @@ class DtqDebuger(QWidget):
             "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
             "QPushButton:hover{border-color:green;}")
 
-        self.send_cmd_combo=QComboBox(self) 
+        self.send_cmd_combo=QComboBox(self)
         for key in self.json_cmd_dict:
             self.send_cmd_combo.addItem(key)
         self.send_cmd_combo.setCurrentIndex(self.send_cmd_combo.
@@ -298,16 +298,16 @@ class DtqDebuger(QWidget):
             "QPushButton:hover{border-color:green;}")
 
         self.browser = QTextBrowser ()
-        self.auto_send_chackbox = QCheckBox(u"自动发送") 
+        self.auto_send_chackbox = QCheckBox(u"自动发送")
         self.auto_send_chackbox.setFixedSize(75, 20)
         self.show_time_chackbox = QCheckBox(u"显示时间")
-        self.show_time_chackbox.setFixedSize(75, 20) 
+        self.show_time_chackbox.setFixedSize(75, 20)
         self.browser.setFont(QFont("Courier New", 8, False))
 
-        self.send_time_label=QLabel(u"发送周期：") 
+        self.send_time_label=QLabel(u"发送周期：")
         self.send_time_label.setFixedSize(60, 20)
         self.send_time_lineedit = QLineEdit(u'4000')
-        self.send_time_unit_label=QLabel(u"ms ") 
+        self.send_time_unit_label=QLabel(u"ms ")
         self.send_time_unit_label.setFixedSize(20, 20)
 
         self.update_fm_button=QPushButton(u"加载协议")
@@ -342,7 +342,7 @@ class DtqDebuger(QWidget):
         d_hbox.addWidget(self.send_cmd_combo)
         d_hbox.addWidget(self.send_lineedit)
         d_hbox.addWidget(self.send_lineedit_button)
-        
+
         self.image_button = QPushButton(u"添加固件")
         self.image_button.setCheckable(False)
         self.image_button.setAutoExclusive(False)
@@ -391,14 +391,21 @@ class DtqDebuger(QWidget):
         s_hbox.addWidget(self.script_button)
         s_hbox.addWidget(self.run_button)
 
+        mbox = QVBoxLayout()
+        mbox.addLayout(t_hbox)
+        mbox.addLayout(i_hbox)
+        mbox.addLayout(s_hbox)
+
+        conf_frame = QFrame()
+        conf_frame.setFrameStyle(QFrame.StyledPanel|QFrame.Sunken)
+        conf_frame.setLayout(mbox)
+
         vbox = QVBoxLayout()
         vbox.addLayout(c_hbox)
-        vbox.addLayout(t_hbox)
-        vbox.addLayout(i_hbox)
-        vbox.addLayout(s_hbox)
+        vbox.addWidget(conf_frame)
         vbox.addWidget(self.browser)
         vbox.addLayout(d_hbox)
-        
+
         self.setLayout(vbox)
 
         self.resize( 540, 500 )
@@ -428,9 +435,9 @@ class DtqDebuger(QWidget):
 
         self.uart_listen_thread=UartListen()
         self.connect(self.uart_listen_thread,SIGNAL('protocol_message(QString)'),
-            self.uart_update_text) 
+            self.uart_update_text)
         self.connect(self.uart_listen_thread,SIGNAL('download_image_info(QString)'),
-            self.uart_update_download_image_info) 
+            self.uart_update_download_image_info)
         self.timer = QTimer()
         self.timer.timeout.connect(self.uart_send_data)
 
@@ -465,9 +472,9 @@ class DtqDebuger(QWidget):
         baud_rate   = str(self.baudrate_lineedit.text())
 
         try:
-            ser = serial.Serial( self.ports_dict[serial_port], 
+            ser = serial.Serial( self.ports_dict[serial_port],
                 string.atoi(baud_rate, 10))
-        except serial.SerialException: 
+        except serial.SerialException:
             pass
 
         if input_count == 0:
@@ -518,7 +525,7 @@ class DtqDebuger(QWidget):
             decode_type_flag = 0
             data = unicode(self.send_cmd_combo.currentText())
             self.send_lineedit.setText(self.json_cmd_dict[data])
-  
+
         if data == u'HEX':
             decode_type_flag = 1
             data = unicode(self.send_cmd_combo.currentText())
@@ -527,7 +534,7 @@ class DtqDebuger(QWidget):
     def uart_download_image(self):
         global down_load_image_flag
         global image_path
-        
+
         self.send_cmd_combo.setCurrentIndex(self.send_cmd_combo.
             findText(u'下载程序'))
         if image_path :
@@ -542,7 +549,7 @@ class DtqDebuger(QWidget):
         else:
             show_time_flag = 0
 
-    def uart_auto_send_check(self):  
+    def uart_auto_send_check(self):
         atuo_send_time = string.atoi(str(self.send_time_lineedit.text()))
 
         if self.auto_send_chackbox.isChecked():
@@ -553,7 +560,7 @@ class DtqDebuger(QWidget):
     def uart_update_text(self,data):
         cursor =  self.browser.textCursor()
         cursor.movePosition(QTextCursor.End)
-        
+
         if data[-1] == '%':
             if self.process_bar != 0:
                 cursor.movePosition(QTextCursor.End,QTextCursor.KeepAnchor)
@@ -577,7 +584,7 @@ class DtqDebuger(QWidget):
 
     def uart_scan(self):
         for i in range(256):
-            
+
             try:
                 s = serial.Serial(i)
                 self.com_combo.addItem(s.portstr)
@@ -601,16 +608,16 @@ class DtqDebuger(QWidget):
             if serial_port:
                 try:
                     logging.info(u"尝试打开串口%s" % self.ports_dict[serial_port])
-                    ser = serial.Serial( self.ports_dict[serial_port], 
+                    ser = serial.Serial( self.ports_dict[serial_port],
                         string.atoi(baud_rate, 10))
-                except serial.SerialException: 
+                except serial.SerialException:
                     logging.error(u"打开失败！")
                     pass
             else:
                 logging.error(u'没有检测到设备，请接入设备！')
                 self.browser.append(u"<b>Error[%d]:</b> %s" %(input_count, u'没有检测到设备，请接入设备！'))
                 return
-            
+
             if ser.isOpen() == True:
                 self.browser.append("<font color=red> Open <b>%s</b> \
                     OK!</font>" % ser.portstr )
@@ -640,7 +647,7 @@ class DtqDebuger(QWidget):
             if ser.isOpen() == True:
                 data = str(self.send_lineedit.toPlainText())
                 if show_time_flag == 1:
-                    self.browser.append(u"[%s] <b>S[%d]:</b> %s" 
+                    self.browser.append(u"[%s] <b>S[%d]:</b> %s"
                         % (now, input_count, data))
                 else:
                     self.browser.append(u"<b>S[%d]:</b> %s" %(input_count, data))
@@ -650,7 +657,7 @@ class DtqDebuger(QWidget):
                     data = data.replace(' ','')
                     data = data.decode("hex")
                 ser.write(data)
-                
+
             else:
                 self.browser.append("<font color=red> Open <b>%s</b> \
                     Error!</font>" % ser.portstr )
