@@ -190,6 +190,7 @@ class QtqBurner(QWidget):
 
         self.browser = QTextBrowser()
         self.browser.setFont(QFont("Courier New", 10, QFont.Bold))
+        self.browser.document().setMaximumBlockCount (1000);
 
         vbox = QVBoxLayout()
         vbox.addWidget(self.dtq_tabwidget)
