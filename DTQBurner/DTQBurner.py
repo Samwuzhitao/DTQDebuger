@@ -8,6 +8,7 @@ import serial
 import string
 import time
 import os
+import subprocess
 import sys
 import logging
 import json
@@ -125,7 +126,7 @@ class QtqBurner(QWidget):
             "si24r2e_show_log" :self.show_log,
             "system_init"      :self.system_init
         }
-        self.setWindowTitle(u"烧录工具v0.1.2")
+        self.setWindowTitle(u"烧录工具v0.1.3")
 
         self.com_combo=QComboBox(self)
         self.com_combo.setFixedSize(75, 20)
@@ -140,7 +141,7 @@ class QtqBurner(QWidget):
         self.dtq_id_label=QLabel(u"设备ID:")
         self.dtq_id_lineedit = QLineEdit(u"11223344")
         self.time_label=QLabel(u"系统时间:")
-       
+
         self.time_lineedit = QLineEdit( time.strftime(
             '%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
 
@@ -174,11 +175,16 @@ class QtqBurner(QWidget):
         self.pro_label.setFixedSize(60, 20)
         self.pro_button = QPushButton(u"开始烧录")
         self.debug_button = QPushButton(u"打开调试信息")
+        self.version_label = QLabel(u"固件版本:")
+        self.version_lineedit = QLineEdit()
+        self.version_lineedit.setFixedSize(40, 20)
         yyk_layout = QHBoxLayout()
         yyk_layout.addWidget(self.pro_label)
         yyk_layout.addWidget(self.pro_lineedit)
         yyk_layout.addWidget(self.burn_count_label)
         yyk_layout.addWidget(self.burn_count_lineedit)
+        yyk_layout.addWidget(self.version_label)
+        yyk_layout.addWidget(self.version_lineedit)
         yyk_layout.addWidget(self.pro_button)
         yyk_layout.addWidget(self.debug_button)
 
@@ -201,7 +207,7 @@ class QtqBurner(QWidget):
         box.addLayout(e_hbox)
         box.addLayout(vbox)
         self.setLayout(box)
-        self.resize( 530, 500 )
+        self.resize( 630, 500 )
 
         self.boot_button.clicked.connect(self.choose_image_file)
         self.burn_button.clicked.connect(self.download_image)
@@ -233,18 +239,22 @@ class QtqBurner(QWidget):
             self.dtq_id_lineedit.setText(self.dtq_id)
             show_str = ""
             if result == u"0":
-                show_str = u"%s@UID:[%s] CARD_SET  :成功！" % (pro_name,self.dtq_id)
+                show_str = u"<font color=black>%s@UID:[%s] CARD_SET  :成功！\
+                </font>" % (pro_name,self.dtq_id)
                 self.logresult.card_ok_count = self.logresult.card_ok_count + 1
             else:
                 self.logresult.card_fail_count = self.logresult.card_fail_count + 1
             if result == u"-1":
-                show_str = u"%s@UID:[%s] CARD_SET  :失败！失败类型：烧写失败!" % (pro_name,self.dtq_id)
+                show_str = u"<font color=black>%s@UID:[%s] CARD_SET  :</font><font \
+                color=red>失败！失败类型：烧写失败!</font>" % (pro_name,self.dtq_id)
             if result == u"-2":
-                show_str = u"%s@UID:[%s] CARD_SET  :失败！失败类型：烧写次数满！" % (pro_name,self.dtq_id)
+                show_str = u"<font color=black>%s@UID:[%s] CARD_SET  :</font><font \
+                color=red>失败！失败类型：烧写次数满</font>" % (pro_name,self.dtq_id)
             if result == u"-3":
-                show_str = u"%s@UID:[%s] CARD_SET  :失败！失败类型：管脚松动！" % (pro_name,self.dtq_id)
+                show_str = u"<font color=black>%s@UID:[%s] CARD_SET  :</font><font \
+                color=red>失败！失败类型：管脚松动</font>" % (pro_name,self.dtq_id)
             self.browser.append(show_str)
-            self.logresult.burn_sum_count = self.logresult.burn_sum_count + 1 
+            self.logresult.burn_sum_count = self.logresult.burn_sum_count + 1
             logging.debug( show_str )
 
     def rssi_check(self,json_dict):
@@ -255,10 +265,12 @@ class QtqBurner(QWidget):
             pro_name = json_dict[u"pro_name"]
             show_str = ""
             if result == u"0":
-                show_str = u"%s@UID:[%s] RSSI_CHECK:成功！RSSI = %s" % (pro_name,self.dtq_id,rssi)
-                self.logresult.rssi_ok_count = self.logresult.rssi_ok_count + 1   
+                show_str = u"<font color=black>%s@UID:[%s] RSSI_CHECK:成功！\
+                RSSI = %s</font>" % (pro_name,self.dtq_id,rssi)
+                self.logresult.rssi_ok_count = self.logresult.rssi_ok_count + 1
             else:
-                show_str = u"%s@UID:[%s] RSSI_CHECK:失败！" % (pro_name,self.dtq_id)
+                show_str = u"<font color=black>%s@UID:[%s] RSSI_CHECK:</font>\
+                <font color=red>失败!</font>" % (pro_name,self.dtq_id)
                 self.logresult.rssi_fail_count = self.logresult.rssi_fail_count + 1
             self.browser.append(show_str)
             result_str = u"ID:【%s】 RSSI: %s RSSI_CHECK:%s" %  (self.dtq_id,rssi,result)
@@ -266,21 +278,26 @@ class QtqBurner(QWidget):
 
     def si24r2e_auto_burn(self,json_dict):
         if json_dict.has_key(u"result") == True:
-            result = json_dict[u"result"]
+            result   = json_dict[u"result"]
             pro_name = json_dict[u"pro_name"]
-            setting = json_dict[u"setting"]
-            debug = json_dict[u"debug"]
+            setting  = json_dict[u"setting"]
+            debug    = json_dict[u"debug"]
+            version  = json_dict[u"version"]
             op = u''
+            if json_dict.has_key(u"version") == True:
+                version = json_dict[u"version"]
+                self.version_lineedit.setText(version)
             if result == u"0":
                 if self.pro_dict.has_key(pro_name) == True:
                     self.pro_lineedit.setText(self.pro_dict[pro_name])
-                if setting == u"start":        
+                if setting == u"start":
                     op = u'开始烧录'
                     self.pro_button.setText(u'停止烧录')
-                if setting == u"stop":   
+                if setting == u"stop":
                     op = u'停止烧录'
                     self.pro_button.setText(u'开始烧录')
-                self.browser.append(u"设置协议:[%s] 成功，%s!" % (pro_name,op) )
+                self.browser.append(u"<font color=black>设置协议:[%s] 成功，%s!\
+                    </font>" % (pro_name,op) )
                 logging.debug(u"设置协议:[%s] 成功，%s!" % (pro_name,op) )
 
                 if debug == u'0':
@@ -288,30 +305,31 @@ class QtqBurner(QWidget):
                 else:
                     self.debug_button.setText(u"关闭调试信息")
             else:
-                self.browser.append(u"%s@设置协议:[%s] 失败!" % pro_name )
+                self.browser.append(u"<font color=black>%s@设置协议:[%s]</font>\
+                    <font color=red>失败!</font>" % pro_name )
                 logging.debug(u"设置协议:[%s] 失败!" % pro_name )
 
     def bind_start(self,json_dict):
         if json_dict.has_key(u"result") == True:
             result = json_dict[u"result"]
             if result == u"0":
-                self.browser.append(u"打开串口!" )
+                self.browser.append(u"<font color=black>打开串口!</font>" )
                 logging.debug(u"打开串口!" )
 
     def nvm_opration(self,json_dict):
         if json_dict.has_key(u"operation") == True:
             operation = json_dict[u"operation"]
             show_str = ""
-            if json_dict.has_key(u"read_nvm_data") == True: 
+            if json_dict.has_key(u"read_nvm_data") == True:
                 read_nvm_data = json_dict[u"read_nvm_data"]
                 read_burn_count = json_dict[u"read_burn_count"]
                 show_str = u"读出配置：burn_count：%s read_data:%s" % \
                 (read_burn_count,read_nvm_data )
-                self.browser.append( show_str )
+                self.browser.append("<font color=black>%s</font>" % show_str)
                 logging.debug( show_str )
             if operation == u"wr":
-                show_str = u"比较配置不一致,重新写入配置" 
-                self.browser.append( show_str )
+                show_str = u"比较配置不一致,重新写入配置"
+                self.browser.append("<font color=black>%s</font>" % show_str)
                 logging.debug( show_str )
 
         if json_dict.has_key(u"read_burn_count") == True:
@@ -332,14 +350,14 @@ class QtqBurner(QWidget):
 
     def debug(self,json_dict):
         data = json.dumps(json_dict)
-        self.browser.append(data)
+        self.browser.append("<font color=black>%s</font>" % data)
         logging.debug( data )
 
     def show_log(self,json_dict):
         if json_dict.has_key(u"result") == True:
             result = json_dict[u"result"]
             if result == u"0":
-                self.browser.append(u"调试信息设置成功!" )
+                self.browser.append(u"<font color=black>调试信息设置成功!</font>")
                 logging.debug(u"调试信息设置成功!" )
 
     def yyk_debug(self):
@@ -426,7 +444,10 @@ class QtqBurner(QWidget):
         if data[0] == 'R':
             json_str = data[6:]
             # print json_str
-            json_dict = json.loads(str(json_str))
+            try:
+                json_dict = json.loads(str(json_str))
+            except ValueError:
+                pass
             print json_dict
 
         if json_dict.has_key(u"fun") == True:
@@ -554,14 +575,20 @@ class QtqBurner(QWidget):
         # print cmd1
         cmd2 = exe_file_path + ' --rbp CR0 -p'
         # print cmd2
+        result = 0
         id_str = str(self.dtq_id_lineedit.text())
-        result = os.system( cmd1 )
+        ps = subprocess.Popen( cmd1 )
+        ps.wait()
+        result =  ps.returncode
+
         if result != 0:
             self.browser.append(u"DTQ@UID:[%s] 烧写失败！" % id_str )
             logging.debug(u"DTQ@UID:[%s] 烧写失败！" % id_str )
             return
 
-        result = os.system( cmd2 )
+        ps = subprocess.Popen( cmd2 )
+        ps.wait()
+        result =  ps.returncode
         if result != 0:
             self.browser.append(u"DTQ@UID:[%s] 烧写失败！" % id_str )
             logging.debug(u"DTQ@UID:[%s] 烧写失败！" % id_str )
@@ -573,24 +600,24 @@ class QtqBurner(QWidget):
     def show_log_result(self):
         show_str = u"============================================================"
         logging.debug( show_str )
-        self.browser.append( show_str )
+        self.browser.append("<font color=black>%s</font>" % show_str)
         show_str = u"烧录结果统计:"
         logging.debug( show_str )
-        self.browser.append( show_str )
+        self.browser.append("<font color=black>%s</font>" % show_str)
         show_str = u"总共烧录次数:%d" % datburner.logresult.burn_sum_count
         logging.debug( show_str )
-        self.browser.append( show_str )
+        self.browser.append("<font color=black>%s</font>" % show_str)
         show_str = u"CARD配置结果:成功=%-10d 失败=%-10d" % (datburner.logresult.card_ok_count,\
                                                          datburner.logresult.card_fail_count )
         logging.debug( show_str )
-        self.browser.append( show_str )
+        self.browser.append("<font color=black>%s</font>" % show_str)
         show_str = u"RSSI检验结果:成功=%-10d 失败=%-10d" % (datburner.logresult.rssi_ok_count,\
                                                      datburner.logresult.rssi_fail_count )
         logging.debug( show_str )
-        self.browser.append( show_str )
+        self.browser.append("<font color=black>%s</font>" % show_str)
         show_str = u"============================================================"
         logging.debug( show_str )
-        self.browser.append( show_str )
+        self.browser.append("<font color=black>%s</font>" % show_str)
 
 if __name__=='__main__':
     app = QApplication(sys.argv)
