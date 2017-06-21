@@ -126,6 +126,7 @@ class QtqBurner(QWidget):
             "si24r2e_show_log" :self.show_log,
             "system_init"      :self.system_init
         }
+        self.current_cmd = ''
         self.setWindowTitle(u"烧录工具v0.1.3")
 
         self.com_combo=QComboBox(self)
@@ -225,6 +226,20 @@ class QtqBurner(QWidget):
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_time)
         self.timer.start(1000)
+
+        # self.cmd_re_timer = QTimer()
+        # self.cmd_re_timer.timeout.connect(self.send_cmd)
+
+    def send_cmd(self,cmd):
+        global ser
+        global input_count
+
+        ser.write(cmd)
+        input_count = input_count + 1
+        self.current_cmd = cmd
+
+    def re_send_cmd(self):
+        ser.write(self.current_cmd)
 
     def update_card_info(self,json_dict):
         self.dtq_id = json_dict[u"card_id"]
@@ -339,8 +354,12 @@ class QtqBurner(QWidget):
     def Error(self,json_dict):
         if json_dict.has_key(u"description") == True:
             result = json_dict[u"description"]
-            self.browser.append(u"错误类型:%s" % result )
+            if result == "json syntax error!":
+                self.re_send_cmd()
+            else:
+                self.browser.append(u"错误类型:%s" % result )
             logging.debug(u"错误类型:%s" % result )
+
             if result == "serialport lost!":
                 self.start_button.setText(u"打开接收器")
                 self.pro_button.setText(u"开始烧录")
@@ -379,8 +398,7 @@ class QtqBurner(QWidget):
                 cmd = '{"fun":"si24r2e_show_log","setting": "0"}'
 
             if ser.isOpen() == True:
-                ser.write(cmd)
-                input_count = input_count + 1
+                self.send_cmd(cmd)
             return
 
     def yyk_update_pro(self):
@@ -408,8 +426,7 @@ class QtqBurner(QWidget):
 
                 if ser.isOpen() == True:
                     cmd = '{"fun": "si24r2e_auto_burn","setting": "0","time": "%s"}' % now
-                    ser.write(cmd)
-                    input_count = input_count + 1
+                    self.send_cmd(cmd)
                     data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
                 return
 
@@ -538,15 +555,14 @@ class QtqBurner(QWidget):
             if ser.isOpen() == True:
                 self.uart_listen_thread.start()
                 cmd = "{'fun':'bind_start'}"
-                ser.write(cmd)
-                input_count = input_count + 1
+                self.send_cmd(cmd)
                 data = u"S[%d]: " % (input_count-1) + u"%s" % cmd
                 return
 
         if button_str == u"关闭接收器":
             if input_count >= 1:
                 cmd = '{"fun": "si24r2e_auto_burn","setting": "0"}'
-                ser.write(cmd)
+                self.send_cmd(cmd)
                 self.setting_uart(0)
                 self.browser.append(u"关闭串口!" )
                 logging.debug(u"关闭串口!" )
@@ -627,7 +643,7 @@ if __name__=='__main__':
     cmd = '{"fun": "si24r2e_auto_burn","setting": "0"}'
     if ser != 0:
         try:
-            ser.write(cmd)
+            datburner.send_cmd(cmd)
         except serial.SerialException:
             pass
         datburner.setting_uart(0)
