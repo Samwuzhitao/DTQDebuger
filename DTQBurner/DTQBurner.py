@@ -197,7 +197,7 @@ class QtqBurner(QWidget):
 
         self.browser = QTextBrowser()
         self.browser.setFont(QFont("Courier New", 10, QFont.Bold))
-        self.browser.document().setMaximumBlockCount (1000);
+        self.browser.document().setMaximumBlockCount (10000);
 
         vbox = QVBoxLayout()
         vbox.addWidget(self.dtq_tabwidget)
@@ -311,8 +311,8 @@ class QtqBurner(QWidget):
                 if setting == u"stop":
                     op = u'停止烧录'
                     self.pro_button.setText(u'开始烧录')
-                self.browser.append(u"<font color=black>设置协议:[%s] 成功，%s!\
-                    </font>" % (pro_name,op) )
+                self.browser.append(u"<font color=black>当前协议:[%s] 固件版本:[%s] 烧录设置成功，%s!\
+                    </font>" % (pro_name,version,op) )
                 logging.debug(u"设置协议:[%s] 成功，%s!" % (pro_name,op) )
 
                 if debug == u'0':
