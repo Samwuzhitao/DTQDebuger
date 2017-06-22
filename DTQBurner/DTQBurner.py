@@ -279,14 +279,14 @@ class QtqBurner(QWidget):
             self.dtq_id = json_dict[u"card_id"]
             pro_name = json_dict[u"pro_name"]
             show_str = ""
-            if result == u"0":
+            if self.dtq_id == u"0000000000" or self.dtq_id == u"ffffffffff":
+                show_str = u"<font color=black>%s@RSSI_CHECK:</font>\
+                <font color=red>失败!</font>" % (pro_name)
+                self.logresult.rssi_fail_count = self.logresult.rssi_fail_count + 1
+            else:
                 show_str = u"<font color=black>%s@UID:[%s] RSSI_CHECK:成功！\
                 RSSI = %s</font>" % (pro_name,self.dtq_id,rssi)
                 self.logresult.rssi_ok_count = self.logresult.rssi_ok_count + 1
-            else:
-                show_str = u"<font color=black>%s@UID:[%s] RSSI_CHECK:</font>\
-                <font color=red>失败!</font>" % (pro_name,self.dtq_id)
-                self.logresult.rssi_fail_count = self.logresult.rssi_fail_count + 1
             self.browser.append(show_str)
             result_str = u"ID:【%s】 RSSI: %s RSSI_CHECK:%s" %  (self.dtq_id,rssi,result)
             logging.debug(result_str)
