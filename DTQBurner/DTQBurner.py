@@ -48,9 +48,7 @@ class UartListen(QThread):
         str1 = self.json_revice.r_machine(read_char)
 
         if len(str1) != 0:
-            now = time.strftime( ISOTIMEFORMAT,
-                time.localtime(time.time()))
-            recv_str = u"R[%d]: %s" % (input_count-1,str1)
+            recv_str = str1
         return recv_str
 
     def run(self):
@@ -59,14 +57,13 @@ class UartListen(QThread):
 
         while self.working==True:
             if input_count   >= 1:
+                recv_str      = None
                 try:
                     read_char = ser.read(1)
                 except serial.SerialException:
-                    # recv_str  = self.ReviceFunSets[0]( read_char )
-                    # print "xxxxxxxxxxxxxxxxxxxxxxxx"
                     input_count = 0
                     cmd = u'{"fun":"Error","description":"serialport lost!"}'
-                    recv_str = u"R[%d]: %s" % (input_count-1,cmd)
+                    recv_str = cmd
                     pass
                 if input_count > 0:
                     recv_str  = self.ReviceFunSets[0]( read_char )
@@ -94,6 +91,7 @@ class QtqBurner(QWidget):
 
         super(QtqBurner, self).__init__(parent)
         input_count         = 0
+        self.device_type    = ""
         self.logresult      = LogResult()
         self.ports_dict     = {}
         self.dtq_image_path = ''
@@ -192,8 +190,8 @@ class QtqBurner(QWidget):
         self.dtq_wiget.setLayout(dtq_layout)
         self.yyk_wiget.setLayout(yyk_layout)
 
-        self.dtq_tabwidget.addTab(self.dtq_wiget, "&DTQ")
-        self.dtq_tabwidget.addTab(self.yyk_wiget, "&YYK")
+        self.dtq_tabwidget.addTab(self.dtq_wiget, u"&DTQ")
+        self.dtq_tabwidget.addTab(self.yyk_wiget, u"&YYK")
 
         self.browser = QTextBrowser()
         self.browser.setFont(QFont("Courier New", 10, QFont.Bold))
@@ -227,8 +225,11 @@ class QtqBurner(QWidget):
         self.timer.timeout.connect(self.update_time)
         self.timer.start(1000)
 
-        # self.cmd_re_timer = QTimer()
-        # self.cmd_re_timer.timeout.connect(self.send_cmd)
+    def keyPressEvent(self, e):
+        if self.device_type == "DTQ":
+            print e.key()
+            if e.key() == 16777220: # Enter键
+                self.download_image()
 
     def send_cmd(self,cmd):
         global ser
@@ -242,11 +243,14 @@ class QtqBurner(QWidget):
         ser.write(self.current_cmd)
 
     def update_card_info(self,json_dict):
+
         self.dtq_id = json_dict[u"card_id"]
         self.dtq_id_lineedit.setText(self.dtq_id)
         self.exchange_file()
 
     def card_setting(self,json_dict):
+        self.device_type = "YYK"
+        self.dtq_tabwidget.removeTab(0)
         if json_dict.has_key(u"result") == True:
             result = json_dict[u"result"]
             pro_name = json_dict[u"pro_name"]
@@ -332,6 +336,13 @@ class QtqBurner(QWidget):
                 logging.debug(u"设置协议:[%s] 失败!" % pro_name )
 
     def bind_start(self,json_dict):
+        if json_dict.has_key(u"device_type") == True:
+            device_type = json_dict[u"device_type"]
+            if device_type == "DTQ":
+                self.dtq_tabwidget.removeTab(1)
+            if device_type == "YYK":
+                self.dtq_tabwidget.removeTab(0)
+
         if json_dict.has_key(u"result") == True:
             result = json_dict[u"result"]
             if result == u"0":
@@ -464,15 +475,13 @@ class QtqBurner(QWidget):
             ser.close()
 
     def uart_update_text(self,data):
+        print data
         json_dict = {}
-        if data[0] == 'R':
-            json_str = data[6:]
-            # print json_str
-            try:
-                json_dict = json.loads(str(json_str))
-            except ValueError:
-                pass
-            print json_dict
+        try:
+            json_dict = json.loads(str(data))
+        except ValueError:
+            pass
+        print json_dict
 
         if json_dict.has_key(u"fun") == True:
             fun = json_dict[u"fun"]
@@ -545,10 +554,10 @@ class QtqBurner(QWidget):
                 new_file.write(i)
             new_file.close()
 
-            self.browser.append(u"DTQ@UID:[%s] HEX文件转换成功！" %
+            self.browser.append(u"<font color=black>DTQ@UID:[%s] HEX文件转换成功</font>" %
                 str(self.dtq_id_lineedit.text()) )
         else:
-            self.browser.append(u"DTQ@错误：无原始文件！")
+            self.browser.append(u"<font color=black>DTQ@错误:</font><font color=red>无烧写固件</font>")
 
     def band_start(self):
         global ser
@@ -605,7 +614,8 @@ class QtqBurner(QWidget):
         result =  ps.returncode
 
         if result != 0:
-            self.browser.append(u"DTQ@UID:[%s] 烧写失败！" % id_str )
+            self.browser.append(u"<font color=black>DTQ@UID:[%s] </font>\
+                <font color=red>烧写失败!</font>" % id_str )
             logging.debug(u"DTQ@UID:[%s] 烧写失败！" % id_str )
             return
 
@@ -613,40 +623,43 @@ class QtqBurner(QWidget):
         ps.wait()
         result =  ps.returncode
         if result != 0:
-            self.browser.append(u"DTQ@UID:[%s] 烧写失败！" % id_str )
+            self.browser.append(u"<font color=black>DTQ@UID:[%s] </font>\
+                <font color=red>烧写失败!</font>" % id_str )
             logging.debug(u"DTQ@UID:[%s] 烧写失败！" % id_str )
             return
 
-        self.browser.append(u"DTQ@UID:[%s] 烧写成功！" % id_str )
+        self.browser.append(u"<font color=black>DTQ@UID:[%s] 烧写成功</font>" % id_str )
         logging.debug(u"DTQ@UID:[%s] 烧写成功！" % id_str )
 
     def show_log_result(self):
-        show_str = u"============================================================"
-        logging.debug( show_str )
-        self.browser.append("<font color=black>%s</font>" % show_str)
-        show_str = u"烧录结果统计:"
-        logging.debug( show_str )
-        self.browser.append("<font color=black>%s</font>" % show_str)
-        show_str = u"总共烧录次数:%d" % datburner.logresult.burn_sum_count
-        logging.debug( show_str )
-        self.browser.append("<font color=black>%s</font>" % show_str)
-        show_str = u"CARD配置结果:成功=%-10d 失败=%-10d" % (datburner.logresult.card_ok_count,\
-                                                         datburner.logresult.card_fail_count )
-        logging.debug( show_str )
-        self.browser.append("<font color=black>%s</font>" % show_str)
-        show_str = u"RSSI检验结果:成功=%-10d 失败=%-10d" % (datburner.logresult.rssi_ok_count,\
-                                                     datburner.logresult.rssi_fail_count )
-        logging.debug( show_str )
-        self.browser.append("<font color=black>%s</font>" % show_str)
-        show_str = u"============================================================"
-        logging.debug( show_str )
-        self.browser.append("<font color=black>%s</font>" % show_str)
+        if self.device_type == "YYK":
+            show_str = u"============================================================"
+            logging.debug( show_str )
+            self.browser.append("<font color=black>%s</font>" % show_str)
+            show_str = u"烧录结果统计:"
+            logging.debug( show_str )
+            self.browser.append("<font color=black>%s</font>" % show_str)
+            show_str = u"总共烧录次数:%d" % datburner.logresult.burn_sum_count
+            logging.debug( show_str )
+            self.browser.append("<font color=black>%s</font>" % show_str)
+            show_str = u"CARD配置结果:成功=%-10d 失败=%-10d"  % (datburner.logresult.card_ok_count,\
+                                                             datburner.logresult.card_fail_count )
+            logging.debug( show_str )
+            self.browser.append("<font color=black>%s</font>" % show_str)
+            show_str = u"RSSI检验结果:成功=%-10d 失败=%-10d"  % (datburner.logresult.rssi_ok_count,\
+                                                         datburner.logresult.rssi_fail_count )
+            logging.debug( show_str )
+            self.browser.append("<font color=black>%s</font>" % show_str)
+            show_str = u"============================================================"
+            logging.debug( show_str )
+            self.browser.append("<font color=black>%s</font>" % show_str)
+
 
 if __name__=='__main__':
     app = QApplication(sys.argv)
     datburner = QtqBurner()
     datburner.show()
-    app.exec_()
+    sys.exit(app.exec_())
     cmd = '{"fun": "si24r2e_auto_burn","setting": "0"}'
     if ser != 0:
         try:
