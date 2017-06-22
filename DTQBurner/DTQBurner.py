@@ -256,21 +256,27 @@ class QtqBurner(QWidget):
             if result == u"0":
                 show_str = u"<font color=black>%s@UID:[%s] CARD_SET  :成功！\
                 </font>" % (pro_name,self.dtq_id)
+                self.browser.append(show_str)
+                logging.debug( u"%s@UID:[%s] CARD_SET  :成功！" % (pro_name,self.dtq_id) )
                 self.logresult.card_ok_count = self.logresult.card_ok_count + 1
             else:
                 self.logresult.card_fail_count = self.logresult.card_fail_count + 1
             if result == u"-1":
                 show_str = u"<font color=black>%s@UID:[%s] CARD_SET  :</font><font \
                 color=red>失败！失败类型：烧写失败!</font>" % (pro_name,self.dtq_id)
+                self.browser.append(show_str)
+                logging.debug( u"%s@UID:[%s] CARD_SET  :失败！失败类型：烧写失败!" % (pro_name,self.dtq_id))
             if result == u"-2":
                 show_str = u"<font color=black>%s@UID:[%s] CARD_SET  :</font><font \
                 color=red>失败！失败类型：烧写次数满</font>" % (pro_name,self.dtq_id)
+                self.browser.append(show_str)
+                logging.debug( u"%s@UID:[%s] CARD_SET  :失败！失败类型：烧写次数满!" % (pro_name,self.dtq_id))
             if result == u"-3":
                 show_str = u"<font color=black>%s@UID:[%s] CARD_SET  :</font><font \
                 color=red>失败！失败类型：管脚松动</font>" % (pro_name,self.dtq_id)
-            self.browser.append(show_str)
+                self.browser.append(show_str)
+                logging.debug( u"%s@UID:[%s] CARD_SET  :失败！失败类型：管脚松动!" % (pro_name,self.dtq_id))
             self.logresult.burn_sum_count = self.logresult.burn_sum_count + 1
-            logging.debug( show_str )
 
     def rssi_check(self,json_dict):
         if json_dict.has_key(u"result") == True:
@@ -283,11 +289,12 @@ class QtqBurner(QWidget):
                 show_str = u"<font color=black>%s@RSSI_CHECK:</font>\
                 <font color=red>失败!</font>" % (pro_name)
                 self.logresult.rssi_fail_count = self.logresult.rssi_fail_count + 1
+                self.browser.append(show_str)
             else:
                 show_str = u"<font color=black>%s@UID:[%s] RSSI_CHECK:成功！\
                 RSSI = %s</font>" % (pro_name,self.dtq_id,rssi)
                 self.logresult.rssi_ok_count = self.logresult.rssi_ok_count + 1
-            self.browser.append(show_str)
+                self.browser.append(show_str)
             result_str = u"ID:【%s】 RSSI: %s RSSI_CHECK:%s" %  (self.dtq_id,rssi,result)
             logging.debug(result_str)
 
@@ -354,7 +361,7 @@ class QtqBurner(QWidget):
     def Error(self,json_dict):
         if json_dict.has_key(u"description") == True:
             result = json_dict[u"description"]
-            if result == "json syntax error!":
+            if result == "json syntax error!" or "unknow cmd!":
                 self.re_send_cmd()
             else:
                 self.browser.append(u"错误类型:%s" % result )
