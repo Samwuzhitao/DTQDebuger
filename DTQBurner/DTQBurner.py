@@ -68,6 +68,7 @@ class UartListen(QThread):
                 if input_count > 0:
                     recv_str  = self.ReviceFunSets[0]( read_char )
                 if recv_str :
+                    print recv_str
                     self.emit(SIGNAL('output(QString)'),recv_str)
 
 class LogResult():
@@ -535,7 +536,8 @@ class QtqBurner(QWidget):
             f.close()
 
             time_data = time.strftime( '%Y%m%d',time.localtime(time.time()))
-            insert_data = "04FC0000" + time_data
+            uid_str   = "%8X" % (string.atoi(str(self.dtq_id_lineedit.text()),10))
+            insert_data = "08FC0000" + time_data + uid_str
             insert_data_hex = insert_data.decode("hex")
 
             check_sum = 0
