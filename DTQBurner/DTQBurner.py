@@ -226,10 +226,9 @@ class QtqBurner(QWidget):
         self.timer.start(1000)
 
     def keyPressEvent(self, e):
-        if self.device_type == "DTQ":
-            print e.key()
-            if e.key() == 16777220: # Enter键
-                self.download_image()
+        print e.key()
+        if e.key() == 16777220: # Enter键
+            self.download_image()
 
     def send_cmd(self,cmd):
         global ser
@@ -243,14 +242,12 @@ class QtqBurner(QWidget):
         ser.write(self.current_cmd)
 
     def update_card_info(self,json_dict):
-
         self.dtq_id = json_dict[u"card_id"]
         self.dtq_id_lineedit.setText(self.dtq_id)
         self.exchange_file()
 
     def card_setting(self,json_dict):
         self.device_type = "YYK"
-        self.dtq_tabwidget.removeTab(0)
         if json_dict.has_key(u"result") == True:
             result = json_dict[u"result"]
             pro_name = json_dict[u"pro_name"]
@@ -322,8 +319,8 @@ class QtqBurner(QWidget):
                 if setting == u"stop":
                     op = u'停止烧录'
                     self.pro_button.setText(u'开始烧录')
-                self.browser.append(u"<font color=black>当前协议:[%s] 固件版本:[%s] 烧录设置成功，%s!\
-                    </font>" % (pro_name,version,op) )
+                self.browser.append(u"<font color=black>当前协议:[%s] 固件版本:[%s] \
+                    烧录设置成功，%s!</font>" % (pro_name,version,op) )
                 logging.debug(u"设置协议:[%s] 成功，%s!" % (pro_name,op) )
 
                 if debug == u'0':
@@ -338,10 +335,11 @@ class QtqBurner(QWidget):
     def bind_start(self,json_dict):
         if json_dict.has_key(u"device_type") == True:
             device_type = json_dict[u"device_type"]
-            if device_type == "DTQ":
-                self.dtq_tabwidget.removeTab(1)
-            if device_type == "YYK":
-                self.dtq_tabwidget.removeTab(0)
+            if self.dtq_tabwidget.count() == 2:
+                if device_type == "DTQ":
+                    self.dtq_tabwidget.removeTab(1)
+                if device_type == "YYK":
+                    self.dtq_tabwidget.removeTab(0)
 
         if json_dict.has_key(u"result") == True:
             result = json_dict[u"result"]
