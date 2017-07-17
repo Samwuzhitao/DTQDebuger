@@ -536,7 +536,7 @@ class QtqBurner(QWidget):
             f.close()
 
             time_data = time.strftime( '%Y%m%d',time.localtime(time.time()))
-            uid_str   = "%8X" % (string.atoi(str(self.dtq_id_lineedit.text()),10))
+            uid_str   = "%08X" % (string.atoi(str(self.dtq_id_lineedit.text()),10))
             insert_data = "08FC0000" + time_data + uid_str
             insert_data_hex = insert_data.decode("hex")
 
