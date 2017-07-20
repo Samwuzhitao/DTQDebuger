@@ -9,6 +9,7 @@ import string
 import time
 import os
 import sys
+import json
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
 from JsonDecode import *
@@ -16,11 +17,11 @@ from JsonDecode import *
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as figureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-from pylab import *  
-#指定默认字体  
-mpl.rcParams['font.sans-serif'] = ['SimHei'] 
+from pylab import *
+#指定默认字体
+mpl.rcParams['font.sans-serif'] = ['SimHei']
 #解决保存图像是负号'-'显示为方块的问题
-mpl.rcParams['axes.unicode_minus'] = False   
+mpl.rcParams['axes.unicode_minus'] = False
 
 ser              = ''
 input_count      = 0
@@ -30,9 +31,95 @@ FUN_STR_ADDRESS  = 21
 ISOTIMEFORMAT    = '%Y-%m-%d %H:%M:%S'
 start_test_flag  = 0
 
+answer_start_cmd = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',\
+                                'raise_hand': '1',\
+                                'attendance': '1',\
+                                'questions': [\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '9','range': 'A-D'},\
+                                {'type': 'm','id': '10','range': 'A-F'},\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '9','range': 'A-D'},\
+                                {'type': 'm','id': '20','range': 'A-F'},\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '9','range': 'A-D'},\
+                                {'type': 'm','id': '30','range': 'A-F'},\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '9','range': 'A-D'},\
+                                {'type': 'm','id': '40','range': 'A-F'},\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '9','range': 'A-D'},\
+                                {'type': 'm','id': '50','range': 'A-F'},\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '9','range': 'A-D'},\
+                                {'type': 'm','id': '60','range': 'A-F'},\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '9','range': 'A-D'},\
+                                {'type': 'm','id': '70','range': 'A-F'},\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '79','range': 'A-D'},\
+                                {'type': 'g','id': '80','range': ''}\
+                                ]}"
+
 class Mytimer():
     """docstring for ClassName"""
-    def __init__(self): 
+    def __init__(self):
         self.s    = 0
         self.min  = 0
         self.hour = 0
@@ -52,39 +139,34 @@ class Mytimer():
                     self.hour = 0
                     self.date = self.date + 1
 
-class UartListen(QThread): 
-    def __init__(self,parent=None): 
-        super(UartListen,self).__init__(parent) 
-        self.working=True 
-        self.num=0 
+class UartListen(QThread):
+    def __init__(self,parent=None):
+        super(UartListen,self).__init__(parent)
+        self.working=True
+        self.num=0
         self.json_revice = JsonDecode()
         self.ReviceFunSets = { 0:self.uart_down_load_image_0 }
 
-    def __del__(self): 
-        self.working=False 
+    def __del__(self):
+        self.working=False
         self.wait()
 
     def uart_down_load_image_0(self,read_char):
-        recv_str      = ""
-        
-
         str1 = self.json_revice.r_machine(read_char)
 
-        if len(str1) != 0:
+        if str1:
             now = time.strftime( ISOTIMEFORMAT,
                 time.localtime(time.time()))
-            recv_str = u"【%s】 <b>R[%d]: </b>" % (now,(input_count-1)) + u"%s" % str1
+            return str1
 
-        return recv_str
-
-    def run(self): 
+    def run(self):
         global ser
 
-        while self.working==True: 
+        while self.working==True:
             if ser.isOpen() == True:
                 read_char = ser.read(1)
                 recv_str = self.ReviceFunSets[0]( read_char )
-                if len(recv_str) > 0:
+                if recv_str:
                     self.emit(SIGNAL('output(QString)'),recv_str)
 
 class DtqCounter(QWidget):
@@ -95,15 +177,15 @@ class DtqCounter(QWidget):
         self.uid_list   = []
         self.start_time = 0
         self.setWindowTitle(u"答题器丢包测试工具v0.1.0")
-        self.com_combo=QComboBox(self) 
+        self.com_combo=QComboBox(self)
         self.com_combo.setFixedSize(75, 20)
         self.uart_scan()
         self.start_button= QPushButton(u"打开接收器")
-        self.dtq_id_label=QLabel(u"uID:") 
+        self.dtq_id_label=QLabel(u"uID:")
         self.dtq_id_lineedit = QLineEdit(u"1234567890")
         self.dtq_id_lineedit.setFixedSize(70, 20)
-        self.time_label=QLabel(u"时间:") 
-        self.time_lineedit = QLineEdit( time.strftime( 
+        self.time_label=QLabel(u"时间:")
+        self.time_lineedit = QLineEdit( time.strftime(
             '%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
         self.clear_revice_button=QPushButton(u"清空数据")
         e_hbox = QHBoxLayout()
@@ -114,9 +196,9 @@ class DtqCounter(QWidget):
         e_hbox.addWidget(self.time_label)
         e_hbox.addWidget(self.time_lineedit)
         e_hbox.addWidget(self.clear_revice_button)
-        
+
         #返回当前的figure
-        self.figure = plt.gcf() 
+        self.figure = plt.gcf()
         self.canvas = figureCanvas(self.figure)
         plt.title(u"答题器接包统计")
         plt.xlabel(u'设备ID')
@@ -146,20 +228,21 @@ class DtqCounter(QWidget):
         self.burn_button.clicked.connect(self.time_start)
         self.uart_listen_thread=UartListen()
         self.connect(self.uart_listen_thread,SIGNAL('output(QString)'),
-            self.uart_update_text) 
+            self.uart_update_text)
         self.com_combo.currentIndexChanged.connect(self.change_uart)
 
         self.timer = QTimer()
         self.my_timer = Mytimer()
-        self.timer.timeout.connect(self.update_time)
-        self.timer.start(1000)
+        # self.timer.timeout.connect(self.update_time)
+        # self.timer.start(1000)
 
     def uart_data_clear(self):
         self.browser.clear()
 
     def time_start(self):
         global start_test_flag
-
+        global input_count
+        global ser
         button = self.sender()
 
         if button is None or not isinstance(button, QPushButton):
@@ -168,12 +251,16 @@ class DtqCounter(QWidget):
         button_str = button.text()
 
         if button_str == u"开始自动发送测试":
-            self.time_label.setText(u"测试时间:") 
+            self.time_label.setText(u"测试时间:")
             self.burn_button.setText(u"停止自动发送测试")
             start_test_flag = 1
             self.start_time = int(time.time())
+            if ser != '':
+                if ser.isOpen() == True:
+                    cmd = answer_start_cmd
+                    ser.write(cmd)
         else:
-            self.time_label.setText(u"测试时间:") 
+            self.time_label.setText(u"测试时间:")
             self.burn_button.setText(u"开始自动发送测试")
             self.timer.stop()
             if ser != '':
@@ -197,7 +284,7 @@ class DtqCounter(QWidget):
         global start_test_flag
 
         temp_count = temp_count + 1
-        
+
         if start_test_flag == 0:
             now = time.strftime( ISOTIMEFORMAT, time.localtime(time.time()))
             self.time_lineedit.setText(now)
@@ -211,15 +298,7 @@ class DtqCounter(QWidget):
                 if ser != '':
                     if ser.isOpen() == True:
                         now = time.strftime( ISOTIMEFORMAT, time.localtime(time.time()))
-                        cmd = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',\
-                                'raise_hand': '1',\
-                                'attendance': '1',\
-                                'questions': [\
-                                {'type': 's','id': '1','range': 'A-D'},\
-                                {'type': 'm','id': '13','range': 'A-F'},\
-                                {'type': 'j','id': '24','range': ''},\
-                                {'type': 'd','id': '27','range': '1-5'},\
-                                {'type': 'g','id': '36','range': ''}]}"
+                        cmd = answer_start_cmd
                         ser.write(cmd)
                         self.browser.setText(u"【%s】<b>S[%d]:</b> %s" %(now,input_count, cmd))
                         input_count = input_count + 1
@@ -233,43 +312,50 @@ class DtqCounter(QWidget):
         global input_count
 
         self.browser.append(data)
-        
-        data = data[TIMER_STR_LEN+len("%d" % input_count)-1:]
-        #print data
-        #print data[21:37]
-        if data[21:37] == "update_card_info":
-            id_data = "%010u" % string.atoi(str(data[50:60]))
-            self.dtq_id_lineedit.setText(id_data)
-            if data[50:60] not in self.uid_list:
-                self.data_dict[data[50:60]] = 0
-                self.uid_list.append(data[50:60])
-            #print "UID:[%s] Count:%d" % (data[50:60],self.data_dict[data[50:60]])
-        if data[21:39] == "update_answer_list":
-            if data[52:62] in self.uid_list:
-                self.data_dict[data[52:62]] = self.data_dict[data[52:62]] + 1
-                #print "UID:[%s] Count:%d" % (data[52:62],self.data_dict[data[52:62]])
-                y = []
-                i = []
-                j = 0
-                for key in self.uid_list:
-                    if self.data_dict[key] != 0:
-                        j = j + 1
-                        i.append(j)
-                        y.append(self.data_dict[key])
-                self.figure.clear()
-                plt.title(u"答题器接包统计")
-                #plt.xlabel(u'设备ID')
-                plt.ylabel(u"答题次数")
-                rotation_instance = j*2
-                if rotation_instance >= 90:
-                	rotation_instance = 90
-                plt.xticks(i,self.uid_list,rotation=rotation_instance)
-                plt.grid() 
-                rect = plt.bar(i,y,align="center",yerr=0.000001)
-                #plt.legend((rect,),(u"图例",))
-                self.autolabel(rect)
-                self.canvas.draw()
-                #print self.data_dict
+        data = data.replace('\'','\"')
+
+        json_dict = {}
+        try:
+            json_dict = json.loads(str(data))
+        except ValueError:
+            pass
+        print json_dict
+
+        if json_dict.has_key(u"fun") == True:
+            fun = json_dict[u"fun"]
+            if fun == "update_card_info":
+                if json_dict.has_key(u"card_id") == True:
+                    id_data = json_dict[u"card_id"]
+                    self.dtq_id_lineedit.setText(id_data)
+                    if id_data not in self.uid_list:
+                        self.data_dict[id_data] = 0
+                        self.uid_list.append(id_data)
+                        print self.uid_list
+
+            if fun == "update_answer_list":
+                if json_dict.has_key(u"card_id") == True:
+                    id_data = json_dict[u"card_id"]
+                    if id_data in self.uid_list:
+                        self.data_dict[id_data] = self.data_dict[id_data] + 1
+                        y = []
+                        i = []
+                        j = 0
+                        for key in self.uid_list:
+                            if self.data_dict[key] != 0:
+                                j = j + 1
+                                i.append(j)
+                                y.append(self.data_dict[key])
+                        self.figure.clear()
+                        plt.title(u"答题器接包统计")
+                        plt.ylabel(u"答题次数")
+                        rotation_instance = j*2
+                        if rotation_instance >= 90:
+                            rotation_instance = 90
+                        plt.xticks(i,self.uid_list,rotation=rotation_instance)
+                        plt.grid()
+                        rect = plt.bar(i,y,align="center",yerr=0.000001)
+                        self.autolabel(rect)
+                        self.canvas.draw()
 
     def uart_scan(self):
         for i in range(256):
@@ -289,12 +375,12 @@ class DtqCounter(QWidget):
         if serial_port != '':
             try:
                 ser = serial.Serial( self.ports_dict[serial_port], 1152000)
-            except serial.SerialException: 
+            except serial.SerialException:
                 return
         else:
-            self.browser.append(u"<b>Error[%d]:</b> 未检测到设备，请插入设备！" 
+            self.browser.append(u"<b>Error[%d]:</b> 未检测到设备，请插入设备！"
                 % input_count)
-            return 
+            return
 
         if input_count == 0:
             if ser.isOpen() == True:
@@ -331,8 +417,10 @@ class DtqCounter(QWidget):
             if ser != '':
                 input_count = 0
                 cmd = "{'fun':'bind_stop'}"
-                ser.write(cmd)
-                ser.close()
+                if ser != '':
+                    if ser.isOpen() == True:
+                        ser.write(cmd)
+                        ser.close()
             self.start_button.setText(u"打开接收器")
 
 if __name__=='__main__':
