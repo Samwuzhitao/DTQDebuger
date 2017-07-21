@@ -31,7 +31,119 @@ FUN_STR_ADDRESS  = 21
 ISOTIMEFORMAT    = '%Y-%m-%d %H:%M:%S'
 start_test_flag  = 0
 
-answer_start_cmd = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',\
+answer_40_start_cmd = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',\
+                                'raise_hand': '1',\
+                                'attendance': '1',\
+                                'questions': [\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '9','range': 'A-D'},\
+                                {'type': 'm','id': '10','range': 'A-F'},\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '9','range': 'A-D'},\
+                                {'type': 'm','id': '20','range': 'A-F'},\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '9','range': 'A-D'},\
+                                {'type': 'm','id': '30','range': 'A-F'},\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '9','range': 'A-D'},\
+                                {'type': 'm','id': '40','range': 'A-F'}\
+                                ]}"
+
+answer_60_start_cmd = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',\
+                                'raise_hand': '1',\
+                                'attendance': '1',\
+                                'questions': [\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '9','range': 'A-D'},\
+                                {'type': 'm','id': '10','range': 'A-F'},\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '9','range': 'A-D'},\
+                                {'type': 'm','id': '20','range': 'A-F'},\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '9','range': 'A-D'},\
+                                {'type': 'm','id': '30','range': 'A-F'},\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '9','range': 'A-D'},\
+                                {'type': 'm','id': '40','range': 'A-F'},\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '9','range': 'A-D'},\
+                                {'type': 'm','id': '50','range': 'A-F'},\
+                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 'm','id': '2','range': 'A-F'},\
+                                {'type': 'j','id': '3','range': ''},\
+                                {'type': 'd','id': '4','range': '1-5'},\
+                                {'type': 's','id': '5','range': 'A-D'},\
+                                {'type': 'm','id': '6','range': 'A-F'},\
+                                {'type': 'j','id': '7','range': ''},\
+                                {'type': 'd','id': '8','range': '1-5'},\
+                                {'type': 's','id': '9','range': 'A-D'},\
+                                {'type': 'm','id': '60','range': 'A-F'}\
+                                ]}"
+
+answer_80_start_cmd = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',\
                                 'raise_hand': '1',\
                                 'attendance': '1',\
                                 'questions': [\
@@ -164,7 +276,10 @@ class UartListen(QThread):
 
         while self.working==True:
             if ser.isOpen() == True:
+                # try:
                 read_char = ser.read(1)
+                # except SerialException:
+                    # pass
                 recv_str = self.ReviceFunSets[0]( read_char )
                 if recv_str:
                     self.emit(SIGNAL('output(QString)'),recv_str)
@@ -175,10 +290,17 @@ class DtqCounter(QWidget):
         self.ports_dict = {}
         self.data_dict  = {}
         self.uid_list   = []
+        self.answer_cmd_dict = {
+              u'40':answer_40_start_cmd,
+              u'60':answer_60_start_cmd,
+              u'80':answer_80_start_cmd }
+        self.cmd = answer_40_start_cmd
         self.start_time = 0
         self.setWindowTitle(u"答题器丢包测试工具v0.1.0")
         self.com_combo=QComboBox(self)
         self.com_combo.setFixedSize(75, 20)
+        self.cmd_combo=QComboBox(self)
+        self.cmd_combo.addItems(['40','60','80'])
         self.uart_scan()
         self.start_button= QPushButton(u"打开接收器")
         self.dtq_id_label=QLabel(u"uID:")
@@ -195,17 +317,8 @@ class DtqCounter(QWidget):
         e_hbox.addWidget(self.dtq_id_lineedit)
         e_hbox.addWidget(self.time_label)
         e_hbox.addWidget(self.time_lineedit)
+        e_hbox.addWidget(self.cmd_combo)
         e_hbox.addWidget(self.clear_revice_button)
-
-        #返回当前的figure
-        self.figure = plt.gcf()
-        self.canvas = figureCanvas(self.figure)
-        plt.title(u"答题器接包统计")
-        plt.xlabel(u'设备ID')
-        plt.ylabel(u"答题次数")
-        plt.xticks([1,2,3],['uID1','uID2','uID3'])
-        plt.grid()
-
 
         self.burn_button = QPushButton(u"开始自动发送测试")
         self.burn_button.setFont(QFont("Courier New", 14, QFont.Bold))
@@ -214,14 +327,15 @@ class DtqCounter(QWidget):
             "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
             "QPushButton:hover{border-color:green;background:transparent}")
         self.browser = QTextBrowser ()
-        self.browser.setFixedHeight(80)
+        self.browser.setFixedHeight(200)
+        self.result_browser = QTextBrowser ()
         box = QVBoxLayout()
         box.addLayout(e_hbox)
-        box.addWidget(self.canvas)
+        box.addWidget(self.result_browser)
         box.addWidget(self.burn_button)
         box.addWidget(self.browser)
         self.setLayout(box)
-        self.resize( 540, 580 )
+        self.resize( 600, 600 )
 
         self.start_button.clicked.connect(self.band_start)
         self.clear_revice_button.clicked.connect(self.uart_data_clear)
@@ -230,11 +344,13 @@ class DtqCounter(QWidget):
         self.connect(self.uart_listen_thread,SIGNAL('output(QString)'),
             self.uart_update_text)
         self.com_combo.currentIndexChanged.connect(self.change_uart)
-
+        self.cmd_combo.currentIndexChanged.connect(self.cmd_hange)
         self.timer = QTimer()
         self.my_timer = Mytimer()
-        # self.timer.timeout.connect(self.update_time)
-        # self.timer.start(1000)
+
+    def cmd_hange(self):
+        cmd_str = unicode(self.cmd_combo.currentText())
+        self.cmd = self.answer_cmd_dict[cmd_str]
 
     def uart_data_clear(self):
         self.browser.clear()
@@ -247,7 +363,6 @@ class DtqCounter(QWidget):
 
         if button is None or not isinstance(button, QPushButton):
             return
-        #print "clicked button is %s " % button.text()
         button_str = button.text()
 
         if button_str == u"开始自动发送测试":
@@ -256,13 +371,16 @@ class DtqCounter(QWidget):
             start_test_flag = 1
             self.start_time = int(time.time())
             if ser != '':
+                if input_count == 0:
+                    self.open_uart()
                 if ser.isOpen() == True:
-                    cmd = answer_start_cmd
-                    ser.write(cmd)
+                    ser.write(self.cmd)
         else:
             self.time_label.setText(u"测试时间:")
             self.burn_button.setText(u"开始自动发送测试")
-            self.timer.stop()
+            for id_data in self.uid_list:
+                self.data_dict[id_data] = 0
+
             if ser != '':
                 input_count = 0
                 ser.close()
@@ -292,15 +410,14 @@ class DtqCounter(QWidget):
             self.my_timer.inc()
             self.time_lineedit.setText(
                 '%02d.%02d %02d:%02d:%02d' % (self.my_timer.mon,self.my_timer.date,
-                	self.my_timer.hour, self.my_timer.min, self.my_timer.s))
+                 self.my_timer.hour, self.my_timer.min, self.my_timer.s))
 
             if temp_count % 5 == 0:
                 if ser != '':
                     if ser.isOpen() == True:
                         now = time.strftime( ISOTIMEFORMAT, time.localtime(time.time()))
-                        cmd = answer_start_cmd
-                        ser.write(cmd)
-                        self.browser.setText(u"【%s】<b>S[%d]:</b> %s" %(now,input_count, cmd))
+                        ser.write(self.cmd)
+                        self.browser.setText(u"【%s】<b>S[%d]:</b> %s" %(now,input_count, self.cmd))
                         input_count = input_count + 1
 
     def autolabel(self,rects):
@@ -309,9 +426,6 @@ class DtqCounter(QWidget):
             plt.text(rect.get_x()+rect.get_width()/2, height, u'%s' % int(height))
 
     def uart_update_text(self,data):
-        global input_count
-
-        self.browser.append(data)
         data = data.replace('\'','\"')
 
         json_dict = {}
@@ -319,7 +433,7 @@ class DtqCounter(QWidget):
             json_dict = json.loads(str(data))
         except ValueError:
             pass
-        print json_dict
+            return
 
         if json_dict.has_key(u"fun") == True:
             fun = json_dict[u"fun"]
@@ -330,32 +444,38 @@ class DtqCounter(QWidget):
                     if id_data not in self.uid_list:
                         self.data_dict[id_data] = 0
                         self.uid_list.append(id_data)
+                        self.browser.append(data)
                         print self.uid_list
+
+            if fun == "get_device_info":
+                if json_dict.has_key(u"list") == True:
+                    list_str = json_dict[u"list"]
+                    if list_str:
+                        for item in list_str:
+                            uid = item[u"uid"]
+                            if uid not in self.uid_list:
+                                self.data_dict[uid] = 0
+                                self.uid_list.append(uid)
+                        uid_str = str(self.uid_list)
+                        self.browser.append(uid_str)
 
             if fun == "update_answer_list":
                 if json_dict.has_key(u"card_id") == True:
                     id_data = json_dict[u"card_id"]
                     if id_data in self.uid_list:
                         self.data_dict[id_data] = self.data_dict[id_data] + 1
-                        y = []
-                        i = []
-                        j = 0
-                        for key in self.uid_list:
-                            if self.data_dict[key] != 0:
-                                j = j + 1
-                                i.append(j)
-                                y.append(self.data_dict[key])
-                        self.figure.clear()
-                        plt.title(u"答题器接包统计")
-                        plt.ylabel(u"答题次数")
-                        rotation_instance = j*2
-                        if rotation_instance >= 90:
-                            rotation_instance = 90
-                        plt.xticks(i,self.uid_list,rotation=rotation_instance)
-                        plt.grid()
-                        rect = plt.bar(i,y,align="center",yerr=0.000001)
-                        self.autolabel(rect)
-                        self.canvas.draw()
+                        # data = str(self.data_dict)
+                        data_str = ''
+                        i = 0
+                        for item in self.uid_list:
+                            if self.data_dict[item] != 0:
+                                i = i + 1
+                                if (i % 4) == 0:
+                                    data_str = data_str + " [ %10s:%6d ]\r\n" % (item,self.data_dict[item])
+                                else:
+                                    data_str = data_str + " [ %10s:%6d ]" % (item,self.data_dict[item])
+
+                        self.result_browser.setText(data_str)
 
     def uart_scan(self):
         for i in range(256):
@@ -400,7 +520,6 @@ class DtqCounter(QWidget):
 
         if button is None or not isinstance(button, QPushButton):
             return
-        #print "clicked button is %s " % button.text()
         button_str = button.text()
 
         if button_str == u"打开接收器":
@@ -408,10 +527,14 @@ class DtqCounter(QWidget):
             if ser != '':
                 if ser.isOpen() == True:
                     self.uart_listen_thread.start()
-                    cmd = "{'fun':'bind_start'}"
+                    cmd = "{'fun':'get_device_info'}"
                     ser.write(cmd)
                     self.browser.append(u"<b>S[%d]:</b> %s" %(input_count, cmd))
                     input_count = input_count + 1
+                    # cmd = "{'fun':'bind_start'}"
+                    # ser.write(cmd)
+                    # self.browser.append(u"<b>S[%d]:</b> %s" %(input_count, cmd))
+                    # input_count = input_count + 1
                     self.start_button.setText(u"关闭接收器")
         else:
             if ser != '':
