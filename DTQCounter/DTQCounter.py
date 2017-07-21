@@ -13,15 +13,7 @@ import json
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
 from JsonDecode import *
-
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as figureCanvas
-from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
-from pylab import *
-#指定默认字体
-mpl.rcParams['font.sans-serif'] = ['SimHei']
-#解决保存图像是负号'-'显示为方块的问题
-mpl.rcParams['axes.unicode_minus'] = False
+from DTQMonitor import *
 
 ser              = ''
 input_count      = 0
@@ -29,7 +21,6 @@ temp_count       = 0
 TIMER_STR_LEN    = 22
 FUN_STR_ADDRESS  = 21
 ISOTIMEFORMAT    = '%Y-%m-%d %H:%M:%S'
-start_test_flag  = 0
 
 answer_40_start_cmd = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',\
                                 'raise_hand': '1',\
@@ -229,64 +220,35 @@ answer_80_start_cmd = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',
                                 {'type': 'g','id': '80','range': ''}\
                                 ]}"
 
-class Mytimer():
-    """docstring for ClassName"""
-    def __init__(self):
-        self.s    = 0
-        self.min  = 0
-        self.hour = 0
-        self.date = 0
-        self.mon  = 0
-        self.year = 0
-
-    def inc(self):
-        self.s = self.s + 1
-        if self.s == 60:
-            self.s = 0
-            self.min = self.min + 1
-            if self.min == 60:
-                self.min = 0
-                self.hour = self.hour + 1
-                if self.hour == 24:
-                    self.hour = 0
-                    self.date = self.date + 1
-
 class UartListen(QThread):
-    def __init__(self,parent=None):
+    def __init__(self,com,parent=None):
         super(UartListen,self).__init__(parent)
-        self.working=True
-        self.num=0
-        self.json_revice = JsonDecode()
-        self.ReviceFunSets = { 0:self.uart_down_load_image_0 }
+        self.working  = True
+        self.com      = com
+        self.rcmd     = JsonDecode()
 
     def __del__(self):
         self.working=False
         self.wait()
 
-    def uart_down_load_image_0(self,read_char):
-        str1 = self.json_revice.r_machine(read_char)
-
-        if str1:
-            now = time.strftime( ISOTIMEFORMAT,
-                time.localtime(time.time()))
-            return str1
-
     def run(self):
-        global ser
-
         while self.working==True:
-            if ser.isOpen() == True:
-                # try:
-                read_char = ser.read(1)
-                # except SerialException:
-                    # pass
-                recv_str = self.ReviceFunSets[0]( read_char )
-                if recv_str:
+            if self.com.isOpen() == True:
+                try:
+                    read_char = self.com.read(1)
+                    recv_str  = self.rcmd.r_machine(read_char)
+                except serial.SerialException:
+                     self.working = False
+                     pass
+                except AttributeError :
+                    pass
+                if recv_str :
                     self.emit(SIGNAL('output(QString)'),recv_str)
 
 class DtqCounter(QWidget):
     def __init__(self, parent=None):
         super(DtqCounter, self).__init__(parent)
+        self.dtq_monitor = DTQMonitor()
         self.ports_dict = {}
         self.data_dict  = {}
         self.uid_list   = []
@@ -327,8 +289,8 @@ class DtqCounter(QWidget):
             "QPushButton{border:1px solid lightgray;background:rgb(230,230,230)}"
             "QPushButton:hover{border-color:green;background:transparent}")
         self.browser = QTextBrowser ()
-        self.browser.setFixedHeight(200)
         self.result_browser = QTextBrowser ()
+        self.result_browser.setFixedHeight(100)
         box = QVBoxLayout()
         box.addLayout(e_hbox)
         box.addWidget(self.result_browser)
@@ -340,13 +302,7 @@ class DtqCounter(QWidget):
         self.start_button.clicked.connect(self.band_start)
         self.clear_revice_button.clicked.connect(self.uart_data_clear)
         self.burn_button.clicked.connect(self.time_start)
-        self.uart_listen_thread=UartListen()
-        self.connect(self.uart_listen_thread,SIGNAL('output(QString)'),
-            self.uart_update_text)
-        self.com_combo.currentIndexChanged.connect(self.change_uart)
         self.cmd_combo.currentIndexChanged.connect(self.cmd_hange)
-        self.timer = QTimer()
-        self.my_timer = Mytimer()
 
     def cmd_hange(self):
         cmd_str = unicode(self.cmd_combo.currentText())
@@ -356,9 +312,6 @@ class DtqCounter(QWidget):
         self.browser.clear()
 
     def time_start(self):
-        global start_test_flag
-        global input_count
-        global ser
         button = self.sender()
 
         if button is None or not isinstance(button, QPushButton):
@@ -368,62 +321,21 @@ class DtqCounter(QWidget):
         if button_str == u"开始自动发送测试":
             self.time_label.setText(u"测试时间:")
             self.burn_button.setText(u"停止自动发送测试")
-            start_test_flag = 1
             self.start_time = int(time.time())
-            if ser != '':
-                if input_count == 0:
-                    self.open_uart()
-                if ser.isOpen() == True:
-                    ser.write(self.cmd)
+            if self.uart_thread.com :
+                if self.uart_thread.com.isOpen() == True:
+                    self.uart_thread.com.write(self.cmd)
+            if self.dtq_monitor.holk_fun == None:
+                self.dtq_monitor.config_data_update(self.browser.append)
         else:
             self.time_label.setText(u"测试时间:")
             self.burn_button.setText(u"开始自动发送测试")
             for id_data in self.uid_list:
                 self.data_dict[id_data] = 0
 
-            if ser != '':
-                input_count = 0
-                ser.close()
-
-    def change_uart(self):
-        global input_count
-        global ser
-
-        if ser != 0:
-            input_count = 0
-            ser.close()
-        if input_count == 0:
-            self.open_uart()
-
-    def update_time(self):
-        global temp_count
-        global input_count
-        global ser
-        global start_test_flag
-
-        temp_count = temp_count + 1
-
-        if start_test_flag == 0:
-            now = time.strftime( ISOTIMEFORMAT, time.localtime(time.time()))
-            self.time_lineedit.setText(now)
-        else:
-            self.my_timer.inc()
-            self.time_lineedit.setText(
-                '%02d.%02d %02d:%02d:%02d' % (self.my_timer.mon,self.my_timer.date,
-                 self.my_timer.hour, self.my_timer.min, self.my_timer.s))
-
-            if temp_count % 5 == 0:
-                if ser != '':
-                    if ser.isOpen() == True:
-                        now = time.strftime( ISOTIMEFORMAT, time.localtime(time.time()))
-                        ser.write(self.cmd)
-                        self.browser.setText(u"【%s】<b>S[%d]:</b> %s" %(now,input_count, self.cmd))
-                        input_count = input_count + 1
-
-    def autolabel(self,rects):
-        for rect in rects:
-            height = rect.get_height()
-            plt.text(rect.get_x()+rect.get_width()/2, height, u'%s' % int(height))
+            for item in self.dtq_monitor.ser_list:
+                self.dtq_monitor.monitor_dict[item].quit()
+                self.dtq_monitor.monitor_dict[item].com.close()
 
     def uart_update_text(self,data):
         data = data.replace('\'','\"')
@@ -437,6 +349,7 @@ class DtqCounter(QWidget):
 
         if json_dict.has_key(u"fun") == True:
             fun = json_dict[u"fun"]
+
             if fun == "update_card_info":
                 if json_dict.has_key(u"card_id") == True:
                     id_data = json_dict[u"card_id"]
@@ -447,7 +360,12 @@ class DtqCounter(QWidget):
                         self.browser.append(data)
                         print self.uid_list
 
+            if fun == "bind_stop":
+                self.start_button.setText(u"打开接收器")
+                self.uart_thread.com.close()
+
             if fun == "get_device_info":
+                self.start_button.setText(u"关闭接收器")
                 if json_dict.has_key(u"list") == True:
                     list_str = json_dict[u"list"]
                     if list_str:
@@ -464,7 +382,6 @@ class DtqCounter(QWidget):
                     id_data = json_dict[u"card_id"]
                     if id_data in self.uid_list:
                         self.data_dict[id_data] = self.data_dict[id_data] + 1
-                        # data = str(self.data_dict)
                         data_str = ''
                         i = 0
                         for item in self.uid_list:
@@ -488,9 +405,6 @@ class DtqCounter(QWidget):
                 pass
 
     def open_uart(self):
-        global ser
-        global input_count
-
         serial_port = str(self.com_combo.currentText())
         if serial_port != '':
             try:
@@ -498,24 +412,12 @@ class DtqCounter(QWidget):
             except serial.SerialException:
                 return
         else:
-            self.browser.append(u"<b>Error[%d]:</b> 未检测到设备，请插入设备！"
-                % input_count)
+            self.browser.append(u"Error: 未检测到设备，请插入设备！")
             return
 
-        if input_count == 0:
-            if ser.isOpen() == True:
-                self.browser.append("<font color=red> Open  <b>%s</b> \
-                    OK!</font>" % ser.portstr )
-                self.uart_listen_thread.start()
-                input_count = input_count + 1
-        else:
-            self.browser.append("<font color=red> Close <b>%s</b> \
-                OK!</font>" % ser.portstr )
+        return ser
 
     def band_start(self):
-        global ser
-        global input_count
-
         button = self.sender()
 
         if button is None or not isinstance(button, QPushButton):
@@ -523,28 +425,22 @@ class DtqCounter(QWidget):
         button_str = button.text()
 
         if button_str == u"打开接收器":
-            self.open_uart()
-            if ser != '':
-                if ser.isOpen() == True:
-                    self.uart_listen_thread.start()
-                    cmd = "{'fun':'get_device_info'}"
-                    ser.write(cmd)
-                    self.browser.append(u"<b>S[%d]:</b> %s" %(input_count, cmd))
-                    input_count = input_count + 1
-                    # cmd = "{'fun':'bind_start'}"
-                    # ser.write(cmd)
-                    # self.browser.append(u"<b>S[%d]:</b> %s" %(input_count, cmd))
-                    # input_count = input_count + 1
-                    self.start_button.setText(u"关闭接收器")
+            serport = self.open_uart()
+            if serport :
+                self.uart_thread = UartListen(serport)
+                self.connect(self.uart_thread,SIGNAL('output(QString)'),
+                    self.uart_update_text)
+                self.uart_thread.start()
+                cmd = "{'fun':'get_device_info'}"
+                self.uart_thread.com.write(cmd)
+                self.browser.append(u"S:%s" % cmd)
+
         else:
-            if ser != '':
-                input_count = 0
-                cmd = "{'fun':'bind_stop'}"
-                if ser != '':
-                    if ser.isOpen() == True:
-                        ser.write(cmd)
-                        ser.close()
-            self.start_button.setText(u"打开接收器")
+            cmd = "{'fun':'bind_stop'}"
+            self.browser.append(u"S:%s" % cmd)
+            if self.uart_thread.com:
+                if self.uart_thread.com.isOpen() == True:
+                    self.uart_thread.com.write(cmd)
 
 if __name__=='__main__':
     app = QApplication(sys.argv)
