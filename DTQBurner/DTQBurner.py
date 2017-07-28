@@ -111,7 +111,8 @@ class QtqBurner(QWidget):
             u'SXYDXN'  :u'山西移动_鑫诺',
             u'SXYDTYXY':u'山西移动_统一协议',
             u'AHYD'    :u'安徽移动',
-            u'SCYD'    :u'四川移动'
+            u'SCYD'    :u'四川移动',
+            u'ZKXL_YJLKQ':u'中科讯联:远距离考勤'
         }
         self.CmdFunSets = {
             "update_card_info" :self.update_card_info,
@@ -126,7 +127,7 @@ class QtqBurner(QWidget):
             "system_init"      :self.system_init
         }
         self.current_cmd = ''
-        self.setWindowTitle(u"烧录工具v0.1.3")
+        self.setWindowTitle(u"烧录工具v0.1.4")
 
         self.com_combo=QComboBox(self)
         self.com_combo.setFixedSize(75, 20)
