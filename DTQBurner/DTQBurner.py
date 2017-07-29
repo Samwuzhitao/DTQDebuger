@@ -610,6 +610,7 @@ class QtqBurner(QWidget):
         # print cmd2
         result = 0
         id_str = str(self.dtq_id_lineedit.text())
+        cmd1 = cmd1.encode("gbk")
         ps = subprocess.Popen( cmd1 )
         ps.wait()
         result =  ps.returncode
@@ -621,6 +622,7 @@ class QtqBurner(QWidget):
             return
 
         ps = subprocess.Popen( cmd2 )
+        cmd2 = cmd2.encode("gbk")
         ps.wait()
         result =  ps.returncode
         if result != 0:
