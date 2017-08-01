@@ -21,7 +21,7 @@ ISOTIMEFORMAT = '%Y-%m-%d %H:%M:%S'
 log_time      = time.strftime( LOGTIMEFORMAT,time.localtime(time.time()))
 log_name      = "log-%s.txt" % log_time
 CONF_FONT_SIZE = 16
-DIS_NOP = '--------'
+DIS_NOP = '--'
 
 logging.basicConfig ( # 配置日志输出的方式及格式
     level = logging.DEBUG,
@@ -46,6 +46,11 @@ class DTQMonitor(QObject):
         self.data_type_dict = {'00':u'DATA','01':u'ACK ','02':u'PRE '}
         self.holk_fun    = None
 
+    def exchang_uid_hex_to_dec(self,uid):
+        new_uid = uid[6:8] + uid[4:6] + uid[2:4] + uid[0:2]
+        return string.atoi(new_uid,16)
+
+
     def uart_cmd_decode(self,data):
         data = str(data)
         # 回复ACK
@@ -65,14 +70,14 @@ class DTQMonitor(QObject):
                 if dst_uid not in self.uid_list:
                     self.uid_list.append( dst_uid )
                     self.uid_sict[dst_uid] = len(self.uid_list)
-                restlt_str = '[%s] ' % src_uid + DIS_NOP + '%s' % data_type + \
-                              DIS_NOP*self.uid_sict[dst_uid] + '>' + ' [%s] ' % dst_uid
+                restlt_str = '[%10d] ' % self.exchang_uid_hex_to_dec(src_uid) + DIS_NOP + '%s' % data_type + \
+                              DIS_NOP*self.uid_sict[dst_uid] + '>' + ' [%10d] ' % self.exchang_uid_hex_to_dec(dst_uid)
             else:
                 if src_uid not in self.uid_list:
                     self.uid_list.append( src_uid )
                     self.uid_sict[src_uid] = len(self.uid_list)
-                restlt_str = '[%s] ' % dst_uid + '<' + DIS_NOP + '%s' % data_type + \
-                              DIS_NOP*self.uid_sict[src_uid] + ' [%s] ' % src_uid
+                restlt_str = '[%10d] ' % self.exchang_uid_hex_to_dec(dst_uid) + '<' + DIS_NOP + '%s' % data_type + \
+                              DIS_NOP*self.uid_sict[src_uid] + ' [%10d] ' % self.exchang_uid_hex_to_dec(src_uid)
 
         logging.debug( u"%s" % restlt_str)
         if self.hook_fun:
@@ -82,7 +87,7 @@ class DTQMonitor(QObject):
 
     def config_data_update(self,hook_fun):
         self.ser_list = ['COM6','COM43']
-        self.jsq_id   = '7C20DD9F'#'2F53D40B'
+        self.jsq_id   = '7C20DDAE'#'2F53D40B'
         self.hook_fun = hook_fun
 
         print self.ser_list

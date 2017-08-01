@@ -26,7 +26,7 @@ answer_40_start_cmd = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',
                                 'raise_hand': '1',\
                                 'attendance': '1',\
                                 'questions': [\
-                                {'type': 's','id': '1','range': 'A-D'},\
+                                {'type': 's','id': '54','range': 'A-D'},\
                                 {'type': 'm','id': '2','range': 'A-F'},\
                                 {'type': 'j','id': '3','range': ''},\
                                 {'type': 'd','id': '4','range': '1-5'},\
@@ -220,12 +220,16 @@ answer_80_start_cmd = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',
                                 {'type': 'g','id': '80','range': ''}\
                                 ]}"
 
+
+
 class UartListen(QThread):
     def __init__(self,com,parent=None):
         super(UartListen,self).__init__(parent)
         self.working  = True
         self.com      = com
         self.rcmd     = JsonDecode()
+        self.data_buffer  = {}
+        self.buffer_index = 0
 
     def __del__(self):
         self.working=False
@@ -243,7 +247,10 @@ class UartListen(QThread):
                 except AttributeError :
                     pass
                 if recv_str :
-                    self.emit(SIGNAL('output(QString)'),recv_str)
+                    self.data_buffer[self.buffer_index] = recv_str
+                    self.emit(SIGNAL('r_machine_output(int)' ),self.buffer_index )
+                    print 'send_bufeer : %d ' % self.buffer_index
+                    self.buffer_index = (self.buffer_index + 1) % 3
 
 class DtqCounter(QWidget):
     def __init__(self, parent=None):
@@ -262,7 +269,7 @@ class DtqCounter(QWidget):
         self.com_combo=QComboBox(self)
         self.com_combo.setFixedSize(75, 20)
         self.cmd_combo=QComboBox(self)
-        self.cmd_combo.addItems(['40','60','80'])
+        self.cmd_combo.addItems(['80','60','40'])
         self.uart_scan()
         self.start_button= QPushButton(u"打开接收器")
         self.dtq_id_label=QLabel(u"uID:")
@@ -297,7 +304,7 @@ class DtqCounter(QWidget):
         box.addWidget(self.burn_button)
         box.addWidget(self.browser)
         self.setLayout(box)
-        self.resize( 600, 600 )
+        self.resize( 750, 600 )
 
         self.start_button.clicked.connect(self.band_start)
         self.clear_revice_button.clicked.connect(self.uart_data_clear)
@@ -337,8 +344,10 @@ class DtqCounter(QWidget):
                 self.dtq_monitor.monitor_dict[item].quit()
                 self.dtq_monitor.monitor_dict[item].com.close()
 
-    def uart_update_text(self,data):
-        data = data.replace('\'','\"')
+    def uart_update_text(self,buffer_index):
+        print 'revice_bufeer : %d ' % buffer_index
+        json_data = self.uart_thread.data_buffer[buffer_index]
+        data = json_data.replace('\'','\"')
 
         json_dict = {}
         try:
@@ -365,6 +374,7 @@ class DtqCounter(QWidget):
                 self.uart_thread.com.close()
 
             if fun == "get_device_info":
+                print data
                 self.start_button.setText(u"关闭接收器")
                 if json_dict.has_key(u"list") == True:
                     list_str = json_dict[u"list"]
@@ -386,11 +396,14 @@ class DtqCounter(QWidget):
                         i = 0
                         for item in self.uid_list:
                             if self.data_dict[item] != 0:
+                                uid_hex = string.atoi(item,10)
+                                uid_hex = ((uid_hex & 0xff00ff00) >>  8)|((uid_hex & 0x00ff00ff) <<  8)
+                                uid_hex = ((uid_hex & 0xffff0000) >> 16)|((uid_hex & 0x0000ffff) << 16)
                                 i = i + 1
-                                if (i % 4) == 0:
-                                    data_str = data_str + " [ %10s:%6d ]\r\n" % (item,self.data_dict[item])
+                                if (i % 6) == 0:
+                                    data_str = data_str + "[ %08X:%6d ] \r\n" % (uid_hex,self.data_dict[item])
                                 else:
-                                    data_str = data_str + " [ %10s:%6d ]" % (item,self.data_dict[item])
+                                    data_str = data_str + "[ %08X:%6d ] " % (uid_hex,self.data_dict[item])
 
                         self.result_browser.setText(data_str)
 
@@ -428,8 +441,7 @@ class DtqCounter(QWidget):
             serport = self.open_uart()
             if serport :
                 self.uart_thread = UartListen(serport)
-                self.connect(self.uart_thread,SIGNAL('output(QString)'),
-                    self.uart_update_text)
+                self.connect(self.uart_thread,SIGNAL('r_cmd_message(QString, QString)'),self.uart_update_text)
                 self.uart_thread.start()
                 cmd = "{'fun':'get_device_info'}"
                 self.uart_thread.com.write(cmd)
