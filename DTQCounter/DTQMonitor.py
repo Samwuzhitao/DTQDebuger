@@ -63,6 +63,9 @@ class DTQMonitor(QObject):
             return
         src_uid = data[6:14]
         dst_uid = data[14:14+8]
+        seq_id  = data[14+8:14+10]
+        pac_id  = data[14+10:14+12]
+        logic_id = data[14+12:14+14]
 
         # # 解析读取UID指令对应的返回
         if data[2:4] == '0C':
@@ -79,15 +82,19 @@ class DTQMonitor(QObject):
                 restlt_str = '[%10d] ' % self.exchang_uid_hex_to_dec(dst_uid) + '<' + DIS_NOP + '%s' % data_type + \
                               DIS_NOP*self.uid_sict[src_uid] + ' [%10d] ' % self.exchang_uid_hex_to_dec(src_uid)
 
+            restlt_str = 'seq:%s ' % seq_id + 'pac:%s ' % pac_id + restlt_str
         logging.debug( u"%s" % restlt_str)
         if self.hook_fun:
             now = time.strftime( ISOTIMEFORMAT,time.localtime(time.time()))
             ms  = datetime.datetime.now().microsecond
             self.hook_fun('[%s,%03d]:' % (now,ms/1000) + restlt_str)
 
+    def config_id_update(self,dev_id):
+        self.jsq_id   = dev_id#'2F53D40B'
+
     def config_data_update(self,hook_fun):
         self.ser_list = ['COM6','COM43']
-        self.jsq_id   = '7C20DDAE'#'2F53D40B'
+        self.jsq_id   = '7C23DDAC'#'2F53D40B'
         self.hook_fun = hook_fun
 
         print self.ser_list

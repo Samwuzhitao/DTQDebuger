@@ -220,8 +220,6 @@ answer_80_start_cmd = "{'fun': 'answer_start','time': '2017-02-15:17:41:07:137',
                                 {'type': 'g','id': '80','range': ''}\
                                 ]}"
 
-
-
 class UartListen(QThread):
     def __init__(self,com,parent=None):
         super(UartListen,self).__init__(parent)
@@ -247,10 +245,7 @@ class UartListen(QThread):
                 except AttributeError :
                     pass
                 if recv_str :
-                    self.data_buffer[self.buffer_index] = recv_str
-                    self.emit(SIGNAL('r_machine_output(int)' ),self.buffer_index )
-                    print 'send_bufeer : %d ' % self.buffer_index
-                    self.buffer_index = (self.buffer_index + 1) % 3
+                    self.emit(SIGNAL('r_cmd_message(QString)'),recv_str)
 
 class DtqCounter(QWidget):
     def __init__(self, parent=None):
@@ -344,9 +339,9 @@ class DtqCounter(QWidget):
                 self.dtq_monitor.monitor_dict[item].quit()
                 self.dtq_monitor.monitor_dict[item].com.close()
 
-    def uart_update_text(self,buffer_index):
-        print 'revice_bufeer : %d ' % buffer_index
-        json_data = self.uart_thread.data_buffer[buffer_index]
+    def uart_update_text(self,data):
+
+        json_data = data
         data = json_data.replace('\'','\"')
 
         json_dict = {}
@@ -360,6 +355,12 @@ class DtqCounter(QWidget):
             fun = json_dict[u"fun"]
 
             if fun == "update_card_info":
+                if json_dict.has_key(u"device_id") == True:
+                    dev_id = json_dict[u"device_id"]
+                    dev_id = string.atoi(dev_id,10)
+                    uid = "%08X" % dev_id
+                    dev_id = uid[6:8] + uid[4:6] + uid[2:4] + uid[0:2]
+                    self.dtq_monitor.config_id_update(dev_id)
                 if json_dict.has_key(u"card_id") == True:
                     id_data = json_dict[u"card_id"]
                     self.dtq_id_lineedit.setText(id_data)
@@ -441,11 +442,10 @@ class DtqCounter(QWidget):
             serport = self.open_uart()
             if serport :
                 self.uart_thread = UartListen(serport)
-                self.connect(self.uart_thread,SIGNAL('r_cmd_message(QString, QString)'),self.uart_update_text)
+                self.connect(self.uart_thread,SIGNAL('r_cmd_message(QString)'),self.uart_update_text)
                 self.uart_thread.start()
                 cmd = "{'fun':'get_device_info'}"
                 self.uart_thread.com.write(cmd)
-                self.browser.append(u"S:%s" % cmd)
 
         else:
             cmd = "{'fun':'bind_stop'}"
